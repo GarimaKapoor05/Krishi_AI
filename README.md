@@ -119,7 +119,7 @@ Farmers receive actionable insights in their preferred language (English, Hindi,
 ### Backend
 - **Flask**
 - **Flask-JWT-Extended**
-- **SQLAlchemy + SQLite**
+- **Neon DB**
 - **Flask-CORS**
 
 ### Machine Learning
@@ -152,7 +152,7 @@ Farmers receive actionable insights in their preferred language (English, Hindi,
           └──────────────────────────────────────┘
                                │
                                ▼
-                    SQLite Database + ML Models
+                    Neon Database + ML Models
 
 ---
 
