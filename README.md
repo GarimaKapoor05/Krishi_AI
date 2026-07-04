@@ -232,7 +232,7 @@ http://localhost:5173
 ## 🏠 Dashboard
 
 <p align="center">
-  <img src="screenshots/dashboard.png" alt="Dashboard" width="85%">
+  <img src="screenshots/Dashboard.png" alt="Dashboard" width="85%">
 </p>
 
 ---
