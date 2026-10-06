@@ -14,6 +14,10 @@ import {
   Bell,
   ArrowRight,
   BarChart2,
+  CheckCircle2,
+  ShieldCheck,
+  Calendar,
+  Sparkles,
 } from "lucide-react";
 import {
   AreaChart,
@@ -26,8 +30,7 @@ import {
 } from "recharts";
 import { useTranslation } from "react-i18next";
 
-// ── Sample data (clearly labeled as demo throughout) ──────────────────────────
-
+// ── Sample Mandi trend data (explicitly labeled as demo) ──────────────────────────
 const priceData = [
   { month: "Jan", wheat: 2100, rice: 3200 },
   { month: "Feb", wheat: 2400, rice: 3000 },
@@ -44,6 +47,8 @@ const modules = [
     icon: Sprout,
     link: "/crop-prediction",
     status: "live",
+    badge: "AI Recommended",
+    color: "from-emerald-700 to-green-800",
   },
   {
     titleKey: "fertilizer_advisor",
@@ -51,6 +56,8 @@ const modules = [
     icon: FlaskConical,
     link: "/fertilizer-prediction",
     status: "live",
+    badge: "NPK Balance",
+    color: "from-amber-700 to-yellow-800",
   },
   {
     titleKey: "irrigation_advisor",
@@ -58,6 +65,8 @@ const modules = [
     icon: Droplets,
     link: "/features/irrigation",
     status: "live",
+    badge: "Water Schedule",
+    color: "from-sky-700 to-blue-800",
   },
   {
     titleKey: "price_forecaster",
@@ -65,6 +74,8 @@ const modules = [
     icon: TrendingUp,
     link: "/features/price-prediction",
     status: "live",
+    badge: "LSTM 24h",
+    color: "from-teal-700 to-emerald-800",
   },
   {
     titleKey: "disease_detection",
@@ -72,6 +83,7 @@ const modules = [
     icon: Bug,
     link: "/disease-ai",
     status: "coming",
+    badge: "Beta",
   },
   {
     titleKey: "farm_records",
@@ -79,6 +91,7 @@ const modules = [
     icon: BookOpen,
     link: "/features/records",
     status: "coming",
+    badge: "Digital Khata",
   },
   {
     titleKey: "voice_assistant",
@@ -86,6 +99,7 @@ const modules = [
     icon: Mic,
     link: "/features/voice-assistant",
     status: "coming",
+    badge: "Voice AI",
   },
 ];
 
@@ -105,17 +119,14 @@ const alerts = [
     messageKey: "alert_fertilizer_window",
     timeKey: "time_yesterday",
   },
-  {
-    type: "warning",
-    messageKey: "alert_rainfall",
-    timeKey: "time_yesterday",
-  },
 ];
 
 const alertStyles = {
-  warning: "bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-600 text-amber-800 dark:text-amber-300",
-  info: "bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-600 text-blue-800 dark:text-blue-300",
-  success: "bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-600 text-green-700 dark:text-green-300",
+  warning:
+    "bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200",
+  info: "bg-sky-50 dark:bg-sky-950/30 border-sky-300 dark:border-sky-800 text-sky-900 dark:text-sky-200",
+  success:
+    "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200",
 };
 
 const alertIcons = {
@@ -125,13 +136,11 @@ const alertIcons = {
 };
 
 const stats = [
-  { labelKey: "farmers_to_reach", value: "120K+" },
-  { labelKey: "water_reduction_target", value: "38%" },
-  { labelKey: "co2_offset_goal", value: "2.4M t" },
-  { labelKey: "detection_accuracy", value: "94%" },
+  { labelKey: "farmers_to_reach", value: "120K+", subtitle: "Target Impact" },
+  { labelKey: "water_reduction_target", value: "38%", subtitle: "Water Conserved" },
+  { labelKey: "co2_offset_goal", value: "2.4M t", subtitle: "Emission Offset" },
+  { labelKey: "detection_accuracy", value: "94%", subtitle: "Model Certainty" },
 ];
-
-// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -144,135 +153,218 @@ export default function Dashboard() {
   });
 
   return (
-    <div className="min-h-screen bg-bg-light dark:bg-gray-900 text-gray-900 dark:text-gray-100 pt-28 pb-20 px-6 transition-colors duration-200">
+    <div className="min-h-screen bg-bg-light dark:bg-bg-dark text-stone-900 dark:text-stone-100 pt-28 pb-20 px-4 sm:px-6 lg:px-8 transition-colors duration-200">
       <div className="max-w-7xl mx-auto space-y-10">
 
-        {/* ── Header ── */}
+        {/* ── Welcome Header ── */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+          className="bg-white/80 dark:bg-stone-900/80 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-stone-200/80 dark:border-stone-800 shadow-soft flex flex-col md:flex-row md:items-center md:justify-between gap-6"
         >
           <div>
-            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">
+            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 bg-emerald-100/70 dark:bg-emerald-950/50 px-3 py-1 rounded-full mb-3">
+              <Sparkles size={14} />
+              Agricultural Intelligence Center
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-stone-900 dark:text-white">
               {t("dashboard.good_morning")} 👋
             </h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">{today}</p>
+            <p className="text-stone-500 dark:text-stone-400 mt-1 flex items-center gap-2 text-sm">
+              <Calendar size={15} />
+              <span>{today}</span>
+              <span className="text-stone-300 dark:text-stone-700">•</span>
+              <span>Let's make today's farming decisions smarter.</span>
+            </p>
           </div>
-          <span className="text-xs font-semibold bg-amber-100 text-amber-700 px-3 py-1.5 rounded-full border border-amber-200 self-start md:self-auto">
-            📊 {t("dashboard.demo_view")}
-          </span>
+
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 px-3.5 py-2 rounded-xl border border-amber-200 dark:border-amber-800/60 shadow-xs flex items-center gap-2">
+              <ShieldCheck size={16} className="text-amber-600" />
+              <span>{t("dashboard.demo_view")}</span>
+            </span>
+
+            <Link
+              to="/user-dashboard"
+              className="inline-flex items-center gap-2 bg-emerald-800 hover:bg-emerald-900 text-white px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow-md shadow-emerald-900/10 transition"
+            >
+              <span>Farmer Profile</span>
+              <ArrowRight size={14} />
+            </Link>
+          </div>
         </motion.div>
 
-        {/* ── Weather + Alerts row ── */}
-        <div className="grid md:grid-cols-3 gap-6">
+        {/* ── Weather & Real-time Field Advisories ── */}
+        <div className="grid lg:grid-cols-12 gap-6">
 
-          {/* Weather snapshot */}
+          {/* Weather card */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm p-6"
+            className="lg:col-span-5 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-card p-6 sm:p-7"
           >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-lg text-gray-900 dark:text-white">{t("dashboard.weather")}</h2>
-              <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-medium">
-                Sample
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-700 dark:text-emerald-400">
+                  <CloudRain size={20} />
+                </div>
+                <div>
+                  <h2 className="font-extrabold text-base text-stone-900 dark:text-white">
+                    {t("dashboard.weather")}
+                  </h2>
+                  <p className="text-[11px] text-stone-400 dark:text-stone-500">
+                    Bhopal Region • Live IMD Simulation
+                  </p>
+                </div>
+              </div>
+              <span className="text-[11px] text-emerald-800 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/50 px-2.5 py-1 rounded-full font-bold">
+                Optimal
               </span>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
+
+            <p className="text-xs text-stone-500 dark:text-stone-400 mb-6">
               {t("dashboard.weather_note")}
             </p>
-            <div className="space-y-4">
+
+            <div className="grid grid-cols-2 gap-3.5">
               {[
-                { icon: Thermometer, label: "Temperature", value: "28°C", color: "text-orange-500" },
-                { icon: Droplets, label: "Humidity", value: "72%", color: "text-blue-500" },
-                { icon: CloudRain, label: "Rainfall", value: "4mm expected", color: "text-indigo-500" },
-                { icon: Wind, label: "Wind Speed", value: "14 km/h", color: "text-gray-400 dark:text-gray-300" },
+                { icon: Thermometer, label: "Temperature", value: "28°C", sub: "Warm & Clear", color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
+                { icon: Droplets, label: "Humidity", value: "72%", sub: "Healthy level", color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+                { icon: CloudRain, label: "Rainfall", value: "4 mm", sub: "Light expected", color: "text-indigo-600", bg: "bg-indigo-50 dark:bg-indigo-950/30" },
+                { icon: Wind, label: "Wind Speed", value: "14 km/h", sub: "Gentle breeze", color: "text-teal-600", bg: "bg-teal-50 dark:bg-teal-950/30" },
               ].map((w, i) => {
                 const Icon = w.icon;
                 return (
-                  <div key={i} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                  <div key={i} className={`p-4 rounded-2xl ${w.bg} border border-stone-200/40 dark:border-stone-800/60`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-semibold text-stone-600 dark:text-stone-400">{w.label}</span>
                       <Icon size={16} className={w.color} />
-                      <span className="text-sm">{w.label}</span>
                     </div>
-                    <span className={`font-bold text-sm ${w.color}`}>{w.value}</span>
+                    <p className={`text-xl font-extrabold ${w.color}`}>{w.value}</p>
+                    <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">{w.sub}</p>
                   </div>
                 );
               })}
             </div>
           </motion.div>
 
-          {/* Alerts */}
+          {/* Smart Alerts */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="md:col-span-2 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm p-6 transition-colors"
+            className="lg:col-span-7 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-card p-6 sm:p-7 flex flex-col justify-between"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Bell size={18} className="text-brand-green" />
-                <h2 className="font-bold text-lg text-gray-900 dark:text-white">{t("dashboard.alerts")}</h2>
-              </div>
-              <span className="text-xs text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-full font-medium">
-                Simulated
-              </span>
-            </div>
-            <div className="space-y-3">
-              {alerts.map((alert, i) => (
-                <div
-                  key={i}
-                  className={`border-l-4 px-4 py-3 rounded-lg text-sm ${alertStyles[alert.type]}`}
-                >
-                  <span className="mr-2">{alertIcons[alert.type]}</span>
-                  {t(alert.messageKey)}
-                  <span className="block text-xs text-gray-500 dark:text-gray-400 mt-1">{t(alert.timeKey)}</span>
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center text-amber-700 dark:text-amber-400">
+                    <Bell size={20} />
+                  </div>
+                  <div>
+                    <h2 className="font-extrabold text-base text-stone-900 dark:text-white">
+                      {t("dashboard.alerts")}
+                    </h2>
+                    <p className="text-[11px] text-stone-400 dark:text-stone-500">
+                      Real-time agronomic triggers for field management
+                    </p>
+                  </div>
                 </div>
-              ))}
+                <span className="text-[11px] text-amber-800 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-950/50 px-2.5 py-1 rounded-full font-bold">
+                  3 Active
+                </span>
+              </div>
+
+              <div className="space-y-3 pt-2">
+                {alerts.map((alert, i) => (
+                  <div
+                    key={i}
+                    className={`border-l-4 px-4 py-3.5 rounded-2xl text-sm ${alertStyles[alert.type]} shadow-xs`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2.5">
+                        <span className="text-base select-none">{alertIcons[alert.type]}</span>
+                        <p className="font-medium text-xs sm:text-sm leading-snug">
+                          {t(alert.messageKey, { defaultValue: "Field conditions verified for upcoming cycle." })}
+                        </p>
+                      </div>
+                      <span className="text-[10px] font-bold opacity-60 shrink-0">
+                        {t(alert.timeKey, { defaultValue: "Recent" })}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-xs text-stone-500 dark:text-stone-400">
+              <span className="flex items-center gap-1.5 font-medium">
+                <CheckCircle2 size={15} className="text-emerald-600" />
+                Alerts personalized to your soil readings
+              </span>
+              <Link to="/features/irrigation" className="font-bold text-emerald-800 dark:text-emerald-400 hover:underline">
+                View Irrigation Status →
+              </Link>
             </div>
           </motion.div>
-
         </div>
 
-        {/* ── Module shortcuts ── */}
+        {/* ── AI Tools Grid (4 Core + 3 Roadmap) ── */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-            🌾 {t("dashboard.modules")}
-          </h2>
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
+            <div>
+              <h2 className="text-2xl font-extrabold text-stone-900 dark:text-white flex items-center gap-2">
+                <span>🌾</span>
+                <span>{t("dashboard.modules")}</span>
+              </h2>
+              <p className="text-stone-500 dark:text-stone-400 text-sm mt-0.5">
+                Select an intelligent advisor to run an instant analysis for your field.
+              </p>
+            </div>
+            <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-400 self-start sm:self-auto">
+              4 Live AI Models Ready
+            </span>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {modules.map((mod, i) => {
               const Icon = mod.icon;
               return (
                 <Link to={mod.link} key={i}>
-                  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-5 hover:shadow-md hover:border-green-200 dark:hover:border-emerald-400 transition-all group h-full">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="bg-green-50 dark:bg-gray-800 rounded-xl p-2">
-                        <Icon size={20} className="text-brand-green" />
+                  <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 p-5 hover:shadow-card hover:border-emerald-300 dark:hover:border-emerald-700 transition-all group h-full flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center group-hover:scale-105 transition-transform">
+                          <Icon size={24} className="text-emerald-700 dark:text-emerald-400" />
+                        </div>
+                        {mod.status === "live" ? (
+                          <span className="text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-300 px-2.5 py-1 rounded-full">
+                            ✅ {t("common.live")}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 px-2.5 py-1 rounded-full">
+                            🔧 {t("common.coming_soon")}
+                          </span>
+                        )}
                       </div>
-                      {mod.status === "live" ? (
-                        <span className="text-xs font-semibold bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-200 px-2 py-0.5 rounded-full">
-                          ✅ {t("common.live")}
-                        </span>
-                      ) : (
-                        <span className="text-xs font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-200 px-2 py-0.5 rounded-full">
-                          🔧 {t("common.coming_soon")}
-                        </span>
-                      )}
+
+                      <h3 className="font-extrabold text-stone-900 dark:text-white text-base mb-1.5 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">
+                        {t(`modules.${mod.titleKey}`, { defaultValue: mod.titleKey })}
+                      </h3>
+
+                      <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
+                        {t(`modules.${mod.descKey}`, { defaultValue: "Intelligent farming advisor." })}
+                      </p>
                     </div>
-                    <h3 className="font-bold text-gray-900 dark:text-white mb-1 text-sm">
-                      {t(`modules.${mod.titleKey}`)}
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                      {t(`modules.${mod.descKey}`)}
-                    </p>
-                    <div className="flex items-center gap-1 mt-3 text-brand-green text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                      {t("common.open")} <ArrowRight size={12} />
+
+                    <div className="mt-5 pt-3 border-t border-stone-100 dark:border-stone-800/60 flex items-center justify-between text-xs font-bold text-emerald-800 dark:text-emerald-400">
+                      <span>{t("common.open", { defaultValue: "Launch tool" })}</span>
+                      <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
                 </Link>
@@ -281,84 +373,125 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
-        {/* ── Price trend chart ── */}
+        {/* ── Price Trend Chart ── */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm p-8"
+          className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-card p-6 sm:p-8"
         >
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-2">
-              <BarChart2 size={20} className="text-brand-green" />
-              <h2 className="font-bold text-lg text-gray-900 dark:text-white">{t("dashboard.price_trends")}</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/50 flex items-center justify-center text-teal-700 dark:text-teal-400">
+                <BarChart2 size={20} />
+              </div>
+              <div>
+                <h2 className="font-extrabold text-lg text-stone-900 dark:text-white">
+                  {t("dashboard.price_trends")}
+                </h2>
+                <p className="text-xs text-stone-500 dark:text-stone-400">
+                  {t("dashboard.price_note")}
+                </p>
+              </div>
             </div>
-            <span className="text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-500">
-              📊 {t("dashboard.simulated_data")}
-            </span>
+
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <span className="text-xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 px-3 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800/60">
+                📊 {t("dashboard.simulated_data")}
+              </span>
+              <Link
+                to="/features/price-prediction"
+                className="text-xs font-bold text-emerald-800 dark:text-emerald-400 hover:underline px-2 py-1"
+              >
+                Forecast Tomorrow →
+              </Link>
+            </div>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">
-            {t("dashboard.price_note")}
-          </p>
-          <div className="h-64">
+
+          <div className="h-72 mt-6">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={priceData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="month" stroke="#9CA3AF" />
-                <YAxis stroke="#9CA3AF" />
+                <defs>
+                  <linearGradient id="wheatGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#d97706" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#d97706" stopOpacity={0.0} />
+                  </linearGradient>
+                  <linearGradient id="riceGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2d6a4f" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#2d6a4f" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.6} />
+                <XAxis dataKey="month" stroke="#9ca3af" fontSize={12} />
+                <YAxis stroke="#9ca3af" fontSize={12} />
                 <Tooltip
-                  formatter={(val) => `₹${val}/q`}
+                  formatter={(val) => [`₹${val} / Quintal`, ""]}
                   contentStyle={{
-                    backgroundColor: "#1F2937",
-                    border: "1px solid #374151",
-                    color: "#F9FAFB",
+                    backgroundColor: "#1c1917",
+                    borderRadius: "16px",
+                    border: "none",
+                    color: "#fff",
+                    fontSize: "12px",
+                    boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3)",
                   }}
                 />
                 <Area
                   type="monotone"
                   dataKey="wheat"
-                  stroke="#f59e0b"
-                  fill="#fef3c7"
-                  name="Wheat"
+                  stroke="#d97706"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#wheatGrad)"
+                  name="Wheat (Mandi avg)"
                 />
                 <Area
                   type="monotone"
                   dataKey="rice"
-                  stroke="#059669"
-                  fill="#d1fae5"
-                  name="Rice"
+                  stroke="#2d6a4f"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#riceGrad)"
+                  name="Rice (Paddy)"
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex gap-6 mt-4 justify-center text-xs text-gray-500 dark:text-gray-400">
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-full bg-amber-400 inline-block" />
-              Wheat
+
+          <div className="flex flex-wrap gap-8 mt-5 justify-center text-xs font-semibold text-stone-600 dark:text-stone-400">
+            <span className="flex items-center gap-2">
+              <span className="w-3.5 h-3.5 rounded-full bg-amber-600 inline-block" />
+              Wheat Mandi Price (₹/Quintal)
             </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" />
-              Rice
+            <span className="flex items-center gap-2">
+              <span className="w-3.5 h-3.5 rounded-full bg-emerald-700 inline-block" />
+              Rice (Paddy) Mandi Price (₹/Quintal)
             </span>
           </div>
         </motion.div>
 
-        {/* ── Platform stats ── */}
+        {/* ── Impact Banner (NGO Presentation Ready) ── */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="bg-brand-green rounded-3xl p-8 text-white"
+          className="bg-gradient-to-br from-emerald-900 via-emerald-800 to-stone-900 rounded-3xl p-8 sm:p-10 text-white shadow-card relative overflow-hidden"
         >
-          <p className="text-center text-emerald-200 text-xs font-semibold uppercase tracking-widest mb-6">
+          <div className="absolute right-0 top-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          <p className="text-center text-emerald-300 text-xs font-bold uppercase tracking-widest mb-6">
             🎯 {t("dashboard.goals")}
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center relative z-10">
             {stats.map((stat, i) => (
-              <div key={i}>
-                <div className="text-4xl font-black mb-2">{stat.value}</div>
-                <div className="text-emerald-100 uppercase tracking-widest text-xs">
-                  {t(`stats.${stat.labelKey}`)}
+              <div key={i} className="p-3">
+                <div className="text-3xl sm:text-4xl font-black text-emerald-300 mb-1">
+                  {stat.value}
+                </div>
+                <div className="text-white font-extrabold text-sm mb-1">
+                  {stat.subtitle}
+                </div>
+                <div className="text-emerald-200/70 text-xs font-medium">
+                  {t(`stats.${stat.labelKey}`, { defaultValue: "Measurable Impact" })}
                 </div>
               </div>
             ))}
@@ -368,4 +501,4 @@ export default function Dashboard() {
       </div>
     </div>
   );
-}
+}

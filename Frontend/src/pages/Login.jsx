@@ -1,28 +1,27 @@
-import { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Leaf, Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
+import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate, Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Sprout, Mail, Lock, Loader2, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { API_URL } from "../config";
 
-
 function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const { login } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       const res = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
@@ -35,162 +34,160 @@ function Login() {
 
       if (res.ok) {
         login(data.access_token, data.user);
-        navigate('/user-dashboard', { replace: true });
+        navigate("/user-dashboard", { replace: true });
       } else {
-        setError(data.error || 'Invalid credentials');
+        setError(data.error || "Invalid credentials. Please verify your email and password.");
       }
     } catch (err) {
-      setError('Unable to connect to server. Please try again.');
+      setError("Unable to connect to KrishiAI server. Please verify your connection.");
     }
 
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFEFC] dark:bg-gray-950 flex items-center justify-center px-6 py-20">
-
-      {/* Background blobs — decorative, matches landing page feel */}
+    <div className="min-h-screen bg-bg-light dark:bg-bg-dark flex items-center justify-center px-4 sm:px-6 py-28 relative overflow-hidden transition-colors">
+      {/* Decorative ambient gradients */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-green-100 dark:bg-green-900/20 rounded-full blur-3xl opacity-60" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-emerald-100 dark:bg-emerald-900/20 rounded-full blur-3xl opacity-60" />
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-emerald-200/30 dark:bg-emerald-950/20 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-amber-200/30 dark:bg-amber-950/20 rounded-full blur-3xl" />
       </div>
 
-      <div className="w-full max-w-md relative z-10">
-
-        {/* Logo */}
+      <div className="w-full max-w-md relative z-10 space-y-8">
+        {/* Brand Header */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-10"
+          className="text-center"
         >
-          <Link to="/" className="inline-flex flex-col items-center gap-3">
-            <div className="bg-brand-green text-white p-4 rounded-3xl shadow-lg">
-              <Leaf size={36} />
+          <Link to="/" className="inline-flex flex-col items-center gap-2 group">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-800 to-emerald-950 flex items-center justify-center text-white shadow-lg shadow-emerald-900/15 group-hover:scale-105 transition-transform">
+              <Sprout size={30} className="text-emerald-300" />
             </div>
-            <h1 className="text-3xl font-extrabold text-brand-green">
-              Krishi AI
+            <h1 className="text-3xl font-extrabold text-stone-900 dark:text-white mt-1">
+              Krishi<span className="text-emerald-700 dark:text-emerald-400">AI</span>
             </h1>
           </Link>
-          <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm">
-            Smart Farming, Better Future
+          <p className="text-stone-500 dark:text-stone-400 mt-1 text-sm font-medium">
+            Empowering Farmers with Intelligent Agricultural Decisions
           </p>
         </motion.div>
 
         {/* Card */}
         <motion.div
-          initial={{ opacity: 0, y: 25 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="bg-white dark:bg-gray-900 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-800 p-10"
+          transition={{ delay: 0.1 }}
+          className="bg-white dark:bg-stone-900 rounded-3xl shadow-card border border-stone-200 dark:border-stone-800 p-8 sm:p-10"
         >
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Welcome back 👋
-          </h2>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">
-            Log in to access your farm dashboard.
-          </p>
+          <div className="mb-6">
+            <h2 className="text-2xl font-black text-stone-900 dark:text-white">
+              Farmer Login 👋
+            </h2>
+            <p className="text-stone-500 dark:text-stone-400 text-xs sm:text-sm mt-1">
+              Sign in to view your farm history, soil advisories, and mandi price alerts.
+            </p>
+          </div>
 
-          {/* Error */}
+          {/* Error Message */}
           {error && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-2xl mb-6 text-sm"
+              className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 px-4 py-3 rounded-2xl mb-6 text-xs sm:text-sm font-medium flex items-center gap-2"
             >
-              ⚠️ {error}
+              <span>⚠️</span>
+              <span>{error}</span>
             </motion.div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-5">
-
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            {/* Email Address */}
+            <div className="space-y-1.5">
+              <label className="block text-xs sm:text-sm font-bold text-stone-800 dark:text-stone-200">
                 Email Address
               </label>
-              <div className="flex items-center border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-brand-green dark:bg-gray-800 transition">
-                <Mail size={18} className="text-gray-400 mr-3 shrink-0" />
+              <div className="flex items-center border border-stone-200 dark:border-stone-700 rounded-2xl px-4 py-3.5 bg-stone-50/50 dark:bg-stone-800/40 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:bg-white dark:focus-within:bg-stone-900 transition">
+                <Mail size={18} className="text-stone-400 mr-3 shrink-0" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="farmer@example.com"
                   required
-                  className="w-full outline-none bg-transparent text-gray-900 dark:text-white placeholder-gray-400 text-sm"
+                  className="w-full outline-none bg-transparent text-stone-900 dark:text-white font-semibold text-sm placeholder:font-normal placeholder:text-stone-400"
                 />
               </div>
             </div>
 
             {/* Password */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <div className="space-y-1.5">
+              <label className="block text-xs sm:text-sm font-bold text-stone-800 dark:text-stone-200">
                 Password
               </label>
-              <div className="flex items-center border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-brand-green dark:bg-gray-800 transition">
-                <Lock size={18} className="text-gray-400 mr-3 shrink-0" />
+              <div className="flex items-center border border-stone-200 dark:border-stone-700 rounded-2xl px-4 py-3.5 bg-stone-50/50 dark:bg-stone-800/40 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:bg-white dark:focus-within:bg-stone-900 transition">
+                <Lock size={18} className="text-stone-400 mr-3 shrink-0" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full outline-none bg-transparent text-gray-900 dark:text-white placeholder-gray-400 text-sm"
+                  className="w-full outline-none bg-transparent text-stone-900 dark:text-white font-semibold text-sm placeholder:font-normal placeholder:text-stone-400"
                 />
               </div>
             </div>
 
-            {/* Submit */}
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-brand-green hover:bg-green-700 text-white py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 disabled:opacity-70 flex items-center justify-center gap-2 mt-2"
+              className="w-full mt-2 bg-gradient-to-r from-emerald-800 to-emerald-900 hover:from-emerald-900 hover:to-black text-white py-4 rounded-2xl font-bold text-sm sm:text-base shadow-md shadow-emerald-900/15 transition-all duration-200 disabled:opacity-70 flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
                   <Loader2 size={18} className="animate-spin" />
-                  Logging in...
+                  <span>Signing In...</span>
                 </>
               ) : (
                 <>
-                  Login to Krishi AI
+                  <span>Sign In to KrishiAI</span>
                   <ArrowRight size={16} />
                 </>
               )}
             </button>
-
           </form>
 
-          <p className="text-center mt-8 text-sm text-gray-500 dark:text-gray-400">
-            New to Krishi AI?{' '}
-            <Link
-              to="/register"
-              className="text-brand-green font-semibold hover:underline"
-            >
-              Create an account
-            </Link>
-          </p>
-
+          {/* Registration link */}
+          <div className="mt-8 pt-6 border-t border-stone-100 dark:border-stone-800 text-center space-y-2">
+            <p className="text-xs sm:text-sm text-stone-500 dark:text-stone-400">
+              New to KrishiAI?{" "}
+              <Link
+                to="/register"
+                className="text-emerald-800 dark:text-emerald-400 font-extrabold hover:underline"
+              >
+                Register Your Farm Account
+              </Link>
+            </p>
+            <p className="text-[11px] text-stone-400 flex items-center justify-center gap-1">
+              <ShieldCheck size={14} className="text-emerald-600" />
+              Secure JWT encryption for farmer privacy
+            </p>
+          </div>
         </motion.div>
 
-        {/* Back to home */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="text-center mt-6"
-        >
+        {/* Back Link */}
+        <div className="text-center">
           <Link
             to="/"
-            className="text-sm text-gray-400 hover:text-brand-green transition"
+            className="text-xs font-bold text-stone-500 hover:text-emerald-800 dark:hover:text-emerald-400 transition"
           >
-            ← Back to home
+            ← Back to KrishiAI Home
           </Link>
-        </motion.div>
-
+        </div>
       </div>
     </div>
   );
 }
 
-export default Login;
+export default Login;

@@ -13,9 +13,9 @@ import {
   Phone,
   Calendar,
   ChevronRight,
-  CloudRain,
-  Thermometer,
-  Wind,
+  ShieldCheck,
+  CheckCircle2,
+  Sparkles,
   BarChart2,
 } from "lucide-react";
 import {
@@ -42,58 +42,75 @@ const priceData = [
 const quickActions = [
   {
     title: "Crop Recommendation",
-    desc: "Get AI crop suggestion for your soil",
+    desc: "Find the best crop for your soil & climate",
     icon: Sprout,
     link: "/crop-prediction",
     status: "live",
+    color: "from-emerald-700 to-green-800",
+    bg: "bg-emerald-50 dark:bg-emerald-950/40",
+    border: "border-emerald-200 dark:border-emerald-800",
+    text: "text-emerald-800 dark:text-emerald-300",
   },
   {
     title: "Fertilizer Advisor",
-    desc: "Optimize your soil nutrients",
+    desc: "Balance soil NPK & calculate exact dosage",
     icon: FlaskConical,
     link: "/fertilizer-prediction",
     status: "live",
+    color: "from-amber-700 to-yellow-800",
+    bg: "bg-amber-50 dark:bg-amber-950/40",
+    border: "border-amber-200 dark:border-amber-800",
+    text: "text-amber-800 dark:text-amber-300",
   },
   {
     title: "Irrigation Advisor",
-    desc: "Schedule watering for your field",
+    desc: "Calculate watering requirements & savings",
     icon: Droplets,
     link: "/features/irrigation",
     status: "live",
+    color: "from-sky-700 to-blue-800",
+    bg: "bg-sky-50 dark:bg-sky-950/40",
+    border: "border-sky-200 dark:border-sky-800",
+    text: "text-sky-800 dark:text-sky-300",
   },
   {
     title: "Price Forecaster",
-    desc: "Check tomorrow's mandi prices",
+    desc: "Predict tomorrow's mandi price trends",
     icon: TrendingUp,
     link: "/features/price-prediction",
     status: "live",
+    color: "from-teal-700 to-emerald-800",
+    bg: "bg-teal-50 dark:bg-teal-950/40",
+    border: "border-teal-200 dark:border-teal-800",
+    text: "text-teal-800 dark:text-teal-300",
   },
 ];
+
 // ── Simulated recent activity ─────────────────────────────────────────────────
 const recentActivity = [
   {
     type: "Crop Recommendation",
-    result: "Rice recommended (92% confidence)",
+    result: "Rice recommended (92% confidence score)",
     date: "Today, 10:30 AM",
     icon: Sprout,
-    color: "bg-green-100 text-green-700",
+    color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300",
   },
   {
     type: "Fertilizer Advisor",
-    result: "DAP — 62 kg for 2 hectares",
+    result: "DAP — 62 kg calculated for 2.0 hectares",
     date: "Yesterday, 3:15 PM",
     icon: FlaskConical,
-    color: "bg-blue-100 text-blue-700",
+    color: "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300",
   },
   {
     type: "Irrigation Advisor",
-    result: "Next watering: Tomorrow morning",
+    result: "Recommended: Schedule watering for tomorrow morning",
     date: "2 days ago",
     icon: Droplets,
-    color: "bg-indigo-100 text-indigo-700",
+    color: "bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-300",
   },
 ];
-// ── Simulated alerts ──────────────────────────────────────────────────────────
+
 const getAlerts = (location) => [
   {
     type: "warning",
@@ -102,64 +119,72 @@ const getAlerts = (location) => [
   },
   {
     type: "info",
-    message: `Soybean prices rising in ${location || "local"} mandi this week — good time to plan harvest sale.`,
+    message: `Soybean prices rising in ${location || "local"} mandi this week — good window to plan harvest sale.`,
     time: "5 hours ago",
   },
   {
     type: "success",
-    message: "Optimal sowing window for Rabi crops opens in 2 weeks. Start soil preparation now.",
+    message: "Optimal sowing window for Rabi crops begins in 2 weeks. Prepare soil moisture and seed treatment now.",
     time: "Yesterday",
   },
 ];
 
 const alertStyles = {
-  warning: "bg-amber-50 dark:bg-amber-900/20 border-amber-300 text-amber-800 dark:text-amber-300",
-  info: "bg-blue-50 dark:bg-blue-900/20 border-blue-300 text-blue-800 dark:text-blue-300",
-  success: "bg-green-50 dark:bg-green-900/20 border-green-300 text-green-700 dark:text-green-300",
+  warning: "bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200",
+  info: "bg-sky-50 dark:bg-sky-950/30 border-sky-300 dark:border-sky-800 text-sky-900 dark:text-sky-200",
+  success: "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200",
 };
 
 const alertIcons = { warning: "⚠️", info: "ℹ️", success: "✅" };
 
-// ── Component ─────────────────────────────────────────────────────────────────
 export default function UserDashboard() {
   const { user } = useAuth();
 
-  const firstName = user?.username?.split(" ")[0] || "Farmer";
-  const location = user?.location || "your area";
+  const firstName = user?.username?.split(" ")[0] || user?.name?.split(" ")[0] || "Farmer";
+  const location = user?.location || "Bhopal, MP";
   const farmSize = user?.farm_size || null;
   const phone = user?.phone || null;
   const joinedDate = user?.created_at
     ? new Date(user.created_at).toLocaleDateString("en-IN", { month: "long", year: "numeric" })
-    : null;
+    : "Member";
 
   const today = new Date().toLocaleDateString("en-IN", {
-    weekday: "long", year: "numeric", month: "long", day: "numeric",
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
 
   const alerts = getAlerts(location);
-
-  // Extract city name from location string for mandi label
   const mandiCity = location.split(",")[0].trim();
 
   return (
-    <div className="min-h-screen bg-[#FDFEFC] dark:bg-gray-950 pt-28 pb-20 px-6">
+    <div className="min-h-screen bg-bg-light dark:bg-bg-dark text-stone-900 dark:text-stone-100 pt-28 pb-20 px-4 sm:px-6 lg:px-8 transition-colors duration-200">
       <div className="max-w-7xl mx-auto space-y-10">
 
         {/* ── Section 1: Welcome Header ── */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+          className="bg-white/80 dark:bg-stone-900/80 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-stone-200/80 dark:border-stone-800 shadow-soft flex flex-col md:flex-row md:items-center md:justify-between gap-6"
         >
           <div>
-            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">
+            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 bg-emerald-100/70 dark:bg-emerald-950/50 px-3 py-1 rounded-full mb-3">
+              <Sparkles size={14} />
+              Verified Farmer Profile
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-stone-900 dark:text-white">
               Welcome back, {firstName} 👋
             </h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">{today}</p>
+            <p className="text-stone-500 dark:text-stone-400 mt-1 flex items-center gap-2 text-sm">
+              <Calendar size={15} />
+              <span>{today}</span>
+            </p>
           </div>
-          <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 px-4 py-2 rounded-2xl self-start md:self-auto">
-            <MapPin size={14} className="text-brand-green" />
-            <span className="text-sm font-medium text-green-800 dark:text-green-300">
+
+          <div className="flex items-center gap-2.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-4 py-2.5 rounded-2xl self-start md:self-auto shadow-xs">
+            <MapPin size={16} className="text-emerald-700 dark:text-emerald-400" />
+            <span className="text-xs sm:text-sm font-bold text-emerald-950 dark:text-emerald-200">
               {location}
             </span>
           </div>
@@ -167,55 +192,62 @@ export default function UserDashboard() {
 
         {/* ── Section 2: Farm Snapshot ── */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            🌾 Your Farm Profile
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-extrabold text-stone-900 dark:text-white flex items-center gap-2">
+              <span>🌾</span>
+              <span>Your Farm Profile</span>
+            </h2>
+            <span className="text-xs font-semibold text-stone-500">
+              Synced with account database
+            </span>
+          </div>
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               {
-                label: "Location",
+                label: "Registered Location",
                 value: location,
                 icon: MapPin,
-                color: "text-green-600",
-                bg: "bg-green-50 dark:bg-green-900/20",
+                color: "text-emerald-700 dark:text-emerald-400",
+                bg: "bg-emerald-50 dark:bg-emerald-950/40",
               },
               {
-                label: "Farm Size",
-                value: farmSize ? `${farmSize} hectares` : "Not set",
+                label: "Land Area",
+                value: farmSize ? `${farmSize} hectares` : "Not specified",
                 icon: Ruler,
-                color: "text-blue-600",
-                bg: "bg-blue-50 dark:bg-blue-900/20",
+                color: "text-blue-700 dark:text-blue-400",
+                bg: "bg-blue-50 dark:bg-blue-950/40",
               },
               {
-                label: "Contact",
-                value: phone || "Not set",
+                label: "Contact Phone",
+                value: phone || "Not specified",
                 icon: Phone,
-                color: "text-purple-600",
-                bg: "bg-purple-50 dark:bg-purple-900/20",
+                color: "text-amber-700 dark:text-amber-400",
+                bg: "bg-amber-50 dark:bg-amber-950/40",
               },
               {
-                label: "Member Since",
-                value: joinedDate || "Recently joined",
-                icon: Calendar,
-                color: "text-amber-600",
-                bg: "bg-amber-50 dark:bg-amber-900/20",
+                label: "Membership Status",
+                value: joinedDate,
+                icon: ShieldCheck,
+                color: "text-teal-700 dark:text-teal-400",
+                bg: "bg-teal-50 dark:bg-teal-950/40",
               },
             ].map((item, i) => {
               const Icon = item.icon;
               return (
                 <div
                   key={i}
-                  className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5"
+                  className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-card p-5"
                 >
-                  <div className={`w-9 h-9 rounded-xl ${item.bg} flex items-center justify-center mb-3`}>
-                    <Icon size={16} className={item.color} />
+                  <div className={`w-10 h-10 rounded-2xl ${item.bg} flex items-center justify-center mb-3 shadow-xs`}>
+                    <Icon size={18} className={item.color} />
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{item.label}</p>
-                  <p className="font-bold text-gray-900 dark:text-white text-sm truncate">
+                  <p className="text-xs font-medium text-stone-500 dark:text-stone-400 mb-1">{item.label}</p>
+                  <p className="font-extrabold text-stone-900 dark:text-white text-sm sm:text-base truncate">
                     {item.value}
                   </p>
                 </div>
@@ -224,46 +256,52 @@ export default function UserDashboard() {
           </div>
         </motion.div>
 
-        {/* ── Section 3: Quick Actions ── */}
+        {/* ── Section 3: Quick Action AI Tools ── */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              ⚡ Quick Actions
+            <h2 className="text-xl font-extrabold text-stone-900 dark:text-white flex items-center gap-2">
+              <span>⚡</span>
+              <span>Quick AI Tools</span>
             </h2>
-            <a
-              href="/#capabilities"
-              className="flex items-center gap-1 text-sm text-brand-green font-semibold hover:underline"
+            <Link
+              to="/dashboard"
+              className="flex items-center gap-1 text-xs sm:text-sm text-emerald-800 dark:text-emerald-400 font-bold hover:underline"
             >
-              Explore All Modules
+              <span>Explore All Advisory Modules</span>
               <ChevronRight size={15} />
-            </a>
+            </Link>
           </div>
+
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {quickActions.map((action, i) => {
               const Icon = action.icon;
               return (
                 <Link to={action.link} key={i}>
-                  <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5 hover:shadow-md hover:border-green-200 dark:hover:border-green-700 transition-all group h-full">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="bg-green-50 dark:bg-green-900/30 rounded-xl p-2">
-                        <Icon size={20} className="text-brand-green" />
+                  <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-card p-5 hover:border-emerald-400 dark:hover:border-emerald-600 transition-all group h-full flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-start justify-between mb-3">
+                        <div className={`w-11 h-11 rounded-2xl ${action.bg} flex items-center justify-center group-hover:scale-105 transition-transform`}>
+                          <Icon size={22} className={action.text} />
+                        </div>
+                        <span className="text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-300 px-2 py-0.5 rounded-full">
+                          Ready
+                        </span>
                       </div>
-                      <span className="text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full">
-                        ✅ Live
-                      </span>
+                      <h3 className="font-extrabold text-stone-900 dark:text-white text-base mb-1 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">
+                        {action.title}
+                      </h3>
+                      <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
+                        {action.desc}
+                      </p>
                     </div>
-                    <h3 className="font-bold text-gray-900 dark:text-white text-sm mb-1">
-                      {action.title}
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                      {action.desc}
-                    </p>
-                    <div className="flex items-center gap-1 mt-3 text-brand-green text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                      Open <ArrowRight size={12} />
+
+                    <div className="flex items-center justify-between pt-4 mt-4 border-t border-stone-100 dark:border-stone-800/80 text-emerald-800 dark:text-emerald-400 text-xs font-bold">
+                      <span>Open tool</span>
+                      <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
                 </Link>
@@ -272,140 +310,204 @@ export default function UserDashboard() {
           </div>
         </motion.div>
 
-        {/* ── Section 4: Recent Activity ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm p-8"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              🕐 Recent Activity
-            </h2>
-            <span className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-full font-medium">
-              Sample Data
-            </span>
-          </div>
-          <p className="text-xs text-gray-400 dark:text-gray-500 -mt-4 mb-5">
-            Your prediction history will appear here once saved by the backend.
-          </p>
-          <div className="space-y-4">
-            {recentActivity.map((activity, i) => {
-              const Icon = activity.icon;
-              return (
-                <div
-                  key={i}
-                  className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                >
-                  <div className={`w-10 h-10 rounded-xl ${activity.color} flex items-center justify-center shrink-0`}>
-                    <Icon size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-gray-900 dark:text-white">
-                      {activity.type}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                      {activity.result}
-                    </p>
-                  </div>
-                  <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">
-                    {activity.date}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </motion.div>
+        {/* ── Section 4 & 5: Recent Activity & Smart Alerts ── */}
+        <div className="grid lg:grid-cols-12 gap-6">
 
-        {/* ── Section 5: Smart Alerts ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm p-8"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Bell size={18} className="text-brand-green" />
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                Smart Alerts
-              </h2>
-            </div>
-            <span className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-full font-medium">
-              Simulated
-            </span>
-          </div>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mb-5">
-            📍 Based on your registered location: <span className="font-medium text-gray-600 dark:text-gray-300">{location}</span> — live alerts via IMD weather API in production
-          </p>
-          <div className="space-y-3">
-            {alerts.map((alert, i) => (
-              <div
-                key={i}
-                className={`border-l-4 px-4 py-3 rounded-lg text-sm ${alertStyles[alert.type]}`}
-              >
-                <span className="mr-2">{alertIcons[alert.type]}</span>
-                {alert.message}
-                <span className="block text-xs opacity-60 mt-1">{alert.time}</span>
+          {/* Recent Activity */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="lg:col-span-6 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-card p-6 sm:p-7 flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-lg font-extrabold text-stone-900 dark:text-white flex items-center gap-2">
+                  <span>🕐</span>
+                  <span>Recent Recommendations</span>
+                </h2>
+                <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800/40">
+                  Sample Log
+                </span>
               </div>
-            ))}
-          </div>
-        </motion.div>
+              <p className="text-xs text-stone-400 dark:text-stone-500 mb-5">
+                Session history log from your recent AI analysis runs.
+              </p>
 
-        {/* ── Section 6: Market Snapshot ── */}
+              <div className="space-y-3">
+                {recentActivity.map((activity, i) => {
+                  const Icon = activity.icon;
+                  return (
+                    <div
+                      key={i}
+                      className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200/40 dark:border-stone-800/60 hover:bg-stone-100/80 dark:hover:bg-stone-800 transition"
+                    >
+                      <div className={`w-10 h-10 rounded-xl ${activity.color} flex items-center justify-center shrink-0`}>
+                        <Icon size={18} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-xs sm:text-sm text-stone-900 dark:text-white">
+                          {activity.type}
+                        </p>
+                        <p className="text-xs text-stone-500 dark:text-stone-400 truncate mt-0.5">
+                          {activity.result}
+                        </p>
+                      </div>
+                      <span className="text-[11px] text-stone-400 dark:text-stone-500 shrink-0 font-medium">
+                        {activity.date}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-xs text-stone-500 dark:text-stone-400">
+              <span className="flex items-center gap-1.5 font-medium">
+                <CheckCircle2 size={15} className="text-emerald-600" />
+                Persistent session token verified
+              </span>
+              <Link to="/crop-prediction" className="font-bold text-emerald-800 dark:text-emerald-400 hover:underline">
+                New Analysis →
+              </Link>
+            </div>
+          </motion.div>
+
+          {/* Smart Alerts */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="lg:col-span-6 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-card p-6 sm:p-7 flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Bell size={18} className="text-emerald-700 dark:text-emerald-400" />
+                  <h2 className="text-lg font-extrabold text-stone-900 dark:text-white">
+                    Farm Weather & Soil Alerts
+                  </h2>
+                </div>
+                <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800/40">
+                  Simulated
+                </span>
+              </div>
+              <p className="text-xs text-stone-400 dark:text-stone-500 mb-5">
+                Targeted alerts calibrated to: <span className="font-bold text-stone-700 dark:text-stone-300">{location}</span>
+              </p>
+
+              <div className="space-y-3">
+                {alerts.map((alert, i) => (
+                  <div
+                    key={i}
+                    className={`border-l-4 px-4 py-3.5 rounded-2xl text-xs sm:text-sm ${alertStyles[alert.type]} shadow-xs`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2">
+                        <span className="text-base select-none">{alertIcons[alert.type]}</span>
+                        <p className="font-medium leading-relaxed">{alert.message}</p>
+                      </div>
+                      <span className="text-[10px] font-bold opacity-60 shrink-0">{alert.time}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-xs text-stone-500 dark:text-stone-400">
+              <span className="flex items-center gap-1.5 font-medium">
+                <CheckCircle2 size={15} className="text-emerald-600" />
+                Weather integration active
+              </span>
+              <Link to="/features/irrigation" className="font-bold text-emerald-800 dark:text-emerald-400 hover:underline">
+                Water Schedule →
+              </Link>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* ── Section 6: Mandi Market Snapshot ── */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm p-8"
+          className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-card p-6 sm:p-8"
         >
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-2">
-              <BarChart2 size={18} className="text-brand-green" />
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                {mandiCity} Mandi — Price Snapshot
-              </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/50 flex items-center justify-center text-teal-700 dark:text-teal-400">
+                <BarChart2 size={20} />
+              </div>
+              <div>
+                <h2 className="font-extrabold text-lg text-stone-900 dark:text-white">
+                  {mandiCity} Mandi — Price Snapshot
+                </h2>
+                <p className="text-xs text-stone-500 dark:text-stone-400">
+                  Illustrative ₹/quintal values — live data connects to Agmarknet API in production
+                </p>
+              </div>
             </div>
-            <span className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-full font-medium border border-amber-200 dark:border-amber-700">
-              📊 Simulated Data
+
+            <span className="text-xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 px-3 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800/60 self-start sm:self-auto">
+              📊 Simulated Market Rates
             </span>
           </div>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mb-6">
-            Illustrative ₹/quintal values — live data connects to Agmarknet API in production
-          </p>
-          <div className="h-56">
+
+          <div className="h-60 mt-5">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={priceData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(val) => `₹${val}/q`} />
-                <Area type="monotone" dataKey="soybean" stroke="#059669" fill="#d1fae5" name="Soybean" />
-                <Area type="monotone" dataKey="wheat" stroke="#f59e0b" fill="#fef3c7" name="Wheat" />
+                <defs>
+                  <linearGradient id="soybeanGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2d6a4f" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#2d6a4f" stopOpacity={0.0} />
+                  </linearGradient>
+                  <linearGradient id="wheatGradUser" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#d97706" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#d97706" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.6} />
+                <XAxis dataKey="month" stroke="#9ca3af" fontSize={12} />
+                <YAxis stroke="#9ca3af" fontSize={12} />
+                <Tooltip
+                  formatter={(val) => [`₹${val}/q`, ""]}
+                  contentStyle={{
+                    backgroundColor: "#1c1917",
+                    borderRadius: "16px",
+                    border: "none",
+                    color: "#fff",
+                    fontSize: "12px",
+                  }}
+                />
+                <Area type="monotone" dataKey="soybean" stroke="#2d6a4f" strokeWidth={2.5} fill="url(#soybeanGrad)" name="Soybean" />
+                <Area type="monotone" dataKey="wheat" stroke="#d97706" strokeWidth={2.5} fill="url(#wheatGradUser)" name="Wheat" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex items-center justify-between mt-4">
-            <div className="flex gap-6 text-xs text-gray-500 dark:text-gray-400">
-              <span className="flex items-center gap-1">
-                <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" />
-                Soybean
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-5 pt-3 border-t border-stone-100 dark:border-stone-800 text-xs">
+            <div className="flex gap-6 font-semibold text-stone-600 dark:text-stone-400">
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-emerald-700 inline-block" />
+                Soybean Mandi Price
               </span>
-              <span className="flex items-center gap-1">
-                <span className="w-3 h-3 rounded-full bg-amber-400 inline-block" />
-                Wheat
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-amber-600 inline-block" />
+                Wheat Mandi Price
               </span>
             </div>
+
             <Link
               to="/features/price-prediction"
-              className="text-sm text-brand-green font-semibold hover:underline flex items-center gap-1"
+              className="text-emerald-800 dark:text-emerald-400 font-extrabold hover:underline flex items-center gap-1.5"
             >
-              Full forecast <ArrowRight size={13} />
+              <span>Forecast Tomorrow's Price with LSTM</span>
+              <ArrowRight size={14} />
             </Link>
           </div>
         </motion.div>
+
       </div>
     </div>
   );
-}
+}

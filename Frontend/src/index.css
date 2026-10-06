@@ -1,22 +1,42 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'Inter', sans-serif;
-  transition: background 0.2s ease, color 0.2s ease;
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
 }
 
-/* 🌞 LIGHT */
+/* 🌞 LIGHT: Warm agrarian cream canvas */
 html.light body {
-  background: #f9faf7;
-  color: #111827;
+  background-color: #FAF9F5;
+  color: #1A231E;
 }
 
-/* 🌙 DARK */
+/* 🌙 DARK: Deep rich slate green canvas */
 html.dark body {
-  background: #111827;
-  color: #f9fafb;
+  background-color: #0b1410;
+  color: #F0F4F2;
 }
+
+/* Custom scrollbar for seamless aesthetics */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(45, 106, 79, 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(45, 106, 79, 0.4);
+}

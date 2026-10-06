@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Send, MessageCircle, Phone, Leaf } from "lucide-react";
+import { Send, MessageCircle, Phone, Sprout, ShieldCheck, ArrowRight } from "lucide-react";
 import { API_URL } from "../config";
 import { useTranslation } from "react-i18next";
 
@@ -9,7 +9,7 @@ export default function CallToAction() {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
-    email: ""
+    email: "",
   });
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -28,13 +28,13 @@ export default function CallToAction() {
 
     try {
       const res = await fetch(`${API_URL}/contact`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name || "Website Visitor",
           phone: formData.phone,
           email: formData.email,
-          message: "Call back request from homepage"
+          message: "Call back request from homepage",
         }),
       });
 
@@ -54,91 +54,114 @@ export default function CallToAction() {
   };
 
   return (
-    <section className="py-24 px-6 text-center bg-bg-light dark:bg-gray-900 transition-colors">
-      <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 p-16 rounded-[3rem] border border-gray-100 dark:border-gray-700 shadow-2xl transition-colors">
+    <section className="py-24 px-4 sm:px-6 lg:px-8 text-center bg-bg-light dark:bg-bg-dark transition-colors">
+      <div className="max-w-5xl mx-auto bg-gradient-to-br from-emerald-900 via-emerald-800 to-stone-900 p-8 sm:p-16 rounded-3xl sm:rounded-[3rem] text-white shadow-card relative overflow-hidden">
+        {/* Glow backdrop */}
+        <div className="absolute right-0 top-0 w-96 h-96 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
 
-        <h2 className="text-5xl font-bold text-gray-900 dark:text-white mb-6">
-          {t("cta.title")}
-        </h2>
-
-        <p className="text-xl text-gray-600 dark:text-gray-300 mb-10">
-          {t("cta.desc")}
-        </p>
-
-        {/* Primary CTA */}
-        <Link to="/register">
-          <button className="bg-brand-green text-white px-10 py-5 rounded-full font-bold text-lg hover:bg-green-700 transition-all flex items-center gap-2 mx-auto mb-10">
-            <Leaf size={22} />
-            {t("cta.btnStart")}
-          </button>
-        </Link>
-
-        {/* Divider */}
-        <div className="flex items-center gap-4 my-10">
-          <div className="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
-          <span className="text-sm text-gray-400 dark:text-gray-500 font-medium">
-            {t("cta.divider")}
-          </span>
-          <div className="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
-        </div>
-
-        <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">
-          {t("cta.note")}
-        </p>
-
-        {submitted ? (
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-8 py-5 rounded-2xl text-sm font-medium max-w-md mx-auto">
-            {t(message)}
+        <div className="relative z-10 max-w-3xl mx-auto space-y-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-950/70 border border-emerald-700/50 text-emerald-300 text-xs sm:text-sm font-bold shadow-xs">
+            <Sprout size={16} />
+            <span>Transforming Agronomic Decision Making</span>
           </div>
-        ) : (
-          <form onSubmit={handleContact} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder={t("cta.placeholderName")}
-              className="flex-1 px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:outline-none focus:border-green-500"
-            />
-            
-            <div className="flex-1 flex items-center border border-gray-200 dark:border-gray-700 rounded-2xl px-5 py-4 bg-white dark:bg-gray-900 focus-within:ring-2 focus-within:ring-green-400">
-              <Phone size={18} className="text-gray-400 mr-3" />
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder={t("cta.placeholderPhone")}
-                required
-                className="flex-1 text-sm outline-none bg-transparent"
-              />
-            </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-4 rounded-2xl text-sm font-semibold transition flex items-center gap-2 justify-center disabled:opacity-70 whitespace-nowrap"
+          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+            {t("cta.title", { defaultValue: "Your farm. Smarter. Starting today." })}
+          </h2>
+
+          <p className="text-base sm:text-lg text-emerald-100/80 leading-relaxed">
+            {t("cta.desc", {
+              defaultValue:
+                "Built for Indian farmers — AI-powered crop advice, fertilizer recommendations, and irrigation scheduling, all in one platform.",
+            })}
+          </p>
+
+          {/* Primary CTA */}
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              to="/register"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-white hover:bg-emerald-50 text-emerald-950 font-extrabold text-base shadow-xl transition-all"
             >
-              <Send size={16} />
-              {t("cta.btnCallback")}
-            </button>
-          </form>
-        )}
+              <span>{t("cta.btnStart", { defaultValue: "Start Your Smart Farm →" })}</span>
+            </Link>
 
-        {/* WhatsApp */}
-        <div className="mt-6">
-          <a
-            href="https://wa.me/919876543210?text=Hi%2C%20I'm%20interested%20in%20Krishi%20AI"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm text-gray-400 dark:text-gray-500 hover:text-green-600 transition"
-          >
-            <MessageCircle size={18} />
-            {t("cta.whatsapp")}
-          </a>
+            <Link
+              to="/dashboard"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl border-2 border-white/20 hover:border-white/50 text-white font-bold text-base transition-all"
+            >
+              <span>Explore Public Dashboard</span>
+            </Link>
+          </div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-4 my-8">
+            <div className="flex-1 h-px bg-white/10" />
+            <span className="text-xs uppercase tracking-wider text-emerald-200/60 font-bold">
+              {t("cta.divider", { defaultValue: "or partner with us" })}
+            </span>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
+
+          <p className="text-xs sm:text-sm text-emerald-100/70 max-w-xl mx-auto">
+            {t("cta.note", {
+              defaultValue:
+                "Deploying KrishiAI for your Farmer Producer Organization (FPO), cooperative, or NGO? Leave your number — our agricultural team will call you.",
+            })}
+          </p>
+
+          {submitted ? (
+            <div className="bg-emerald-950/80 border border-emerald-400 text-emerald-200 px-6 py-4 rounded-2xl text-sm font-semibold max-w-md mx-auto">
+              {t(message, { defaultValue: "✅ Thank you! Our team will connect with you within 24 hours." })}
+            </div>
+          ) : (
+            <form onSubmit={handleContact} className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder={t("cta.placeholderName", { defaultValue: "Your name or organization" })}
+                className="flex-1 px-4 py-3.5 rounded-2xl bg-white/10 border border-white/20 text-white placeholder:text-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              />
+
+              <div className="flex-1 flex items-center bg-white/10 border border-white/20 rounded-2xl px-4 py-3.5 focus-within:ring-2 focus-within:ring-emerald-400">
+                <Phone size={16} className="text-stone-300 mr-2.5 shrink-0" />
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder={t("cta.placeholderPhone", { defaultValue: "+91 Mobile number" })}
+                  required
+                  className="w-full bg-transparent text-white placeholder:text-stone-300 text-sm outline-none font-semibold"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-black px-6 py-3.5 rounded-2xl text-sm transition flex items-center gap-2 justify-center disabled:opacity-70 whitespace-nowrap shadow-md"
+              >
+                <Send size={15} />
+                <span>{t("cta.btnCallback", { defaultValue: "Call me back" })}</span>
+              </button>
+            </form>
+          )}
+
+          {/* WhatsApp */}
+          <div className="pt-2">
+            <a
+              href="https://wa.me/919876543210?text=Hi%2C%20I'm%20interested%20in%20Krishi%20AI"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-200/80 hover:text-white transition"
+            >
+              <MessageCircle size={16} />
+              <span>{t("cta.whatsapp", { defaultValue: "Or message our field team on WhatsApp" })}</span>
+            </a>
+          </div>
         </div>
-
       </div>
     </section>
   );
-}
+}
