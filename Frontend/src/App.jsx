@@ -26,6 +26,8 @@ import Register from "./pages/Register";
 import UnderConstruction from "./pages/UnderConstruction";
 import UserDashboard from "./pages/UserDashboard";
 
+import GovSchemeAdvisor from "./pages/GovSchemeAdvisor";
+
 function Home() {
   return (
     <>
@@ -82,7 +84,7 @@ function App() {
         <Route path="/features/health-monitor" element={<ComingSoon feature="🌿 Crop Health Monitoring" />} />
         <Route path="/features/records" element={<ComingSoon feature="📑 Digital Farm Record" />} />
         <Route path="/features/calendar" element={<ComingSoon feature="📅 Crop Calendar & Task Planner" />} />
-        <Route path="/features/schemes" element={<ComingSoon feature="🏛️ Government Scheme Advisor" />} />
+        <Route path="/features/schemes" element={<GovSchemeAdvisor />} />
       </Routes>
 
       <Footer />
