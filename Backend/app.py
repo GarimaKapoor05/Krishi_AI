@@ -13,6 +13,11 @@ from config import Config
 from models import db, User, Contact, bcrypt
 from auth import auth_bp
 from models import bcrypt
+from marketplace import mp_bp
+
+# Ensure the local instance folder exists for the SQLite fallback DB
+os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), "instance"),
+            exist_ok=True)
 
 # ====================== PATH SETUP ======================
 
@@ -49,6 +54,7 @@ app = Flask(__name__)
 # Bind to PORT for Render/gunicorn
 PORT = int(os.environ.get("PORT", 5000))
 app.config.from_object(Config)
+app.config["MAX_CONTENT_LENGTH"] = 12 * 1024 * 1024  # image uploads headroom
 
 
 ALLOWED_ORIGINS = [
@@ -65,7 +71,7 @@ def after_request(response):
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Credentials"] = "true"
         response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PATCH, DELETE, OPTIONS"
     return response
 
 jwt = JWTManager(app)
@@ -76,12 +82,28 @@ bcrypt.init_app(app)
 # Register Authentication Blueprint
 app.register_blueprint(auth_bp, url_prefix="/auth")
 
+# Register Marketplace Blueprint (crop grading, listings, inquiries)
+app.register_blueprint(mp_bp)
+
 with app.app_context():
     try:
         db.create_all()
+        _mg = db.session.execute(db.text("PRAGMA table_info(user)"))
+        _cols = {row[1] for row in _mg.fetchall()}
+        if "role" not in _cols:
+            db.session.execute(db.text(
+                "ALTER TABLE user ADD COLUMN role VARCHAR(20) DEFAULT 'seller'"))
+            db.session.commit()
         print("✅ Database tables created/verified")
     except Exception as e:
-        print(f"❌ Database Error: {e}")
+        db.session.rollback()
+        try:
+            db.session.execute(db.text(
+                "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'seller'"))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+        print(f"⚠️ Database migration note: {e}")
 
 # ====================== LOAD MODELS ======================
 

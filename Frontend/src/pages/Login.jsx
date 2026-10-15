@@ -34,7 +34,9 @@ function Login() {
 
       if (res.ok) {
         login(data.access_token, data.user);
-        navigate("/user-dashboard", { replace: true });
+        navigate(data.user?.role === "buyer" ? "/buyer-dashboard" : "/seller-dashboard", {
+          replace: true,
+        });
       } else {
         setError(data.error || "Invalid credentials. Please verify your email and password.");
       }

@@ -38,3 +38,6 @@ logs/
 dist/
 build/
 *.egg-info/
+
+# Uploaded listing photos (runtime data)
+uploads/

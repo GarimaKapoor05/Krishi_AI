@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Sprout, Mail, Lock, User, Phone, MapPin, Tractor, Loader2, ArrowRight, ShieldCheck } from "lucide-react";
+import { Sprout, Mail, Lock, User, Phone, MapPin, Tractor, Loader2, ArrowRight, ShieldCheck, Store, ShoppingBasket } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { API_URL } from "../config";
 
@@ -13,6 +13,7 @@ function Register() {
     phone: "",
     farm_size: "",
     location: "",
+    role: "seller",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -39,7 +40,9 @@ function Register() {
 
       if (res.ok) {
         login(data.access_token, data.user);
-        navigate("/user-dashboard", { replace: true });
+        navigate(data.user?.role === "buyer" ? "/buyer-dashboard" : "/seller-dashboard", {
+          replace: true,
+        });
       } else {
         setError(data.error || "Registration failed. Please check the details provided.");
       }
@@ -195,7 +198,49 @@ function Register() {
               })}
             </div>
 
-            {/* Submit */}
+            {/* Account Type */}
+            <div className="mt-5 md:col-span-2 space-y-1.5">
+              <span className="block text-xs sm:text-sm font-bold text-stone-800 dark:text-stone-200">
+                I am joining as <span className="text-rose-500 ml-1">*</span>
+              </span>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData((f) => ({ ...f, role: "seller" }))}
+                  className={`flex flex-col items-start gap-1.5 p-4 rounded-2xl border text-left transition ${
+                    formData.role === "seller"
+                      ? "border-emerald-700 bg-emerald-50/80 dark:bg-emerald-950/40 dark:border-emerald-600 ring-2 ring-emerald-600/30"
+                      : "border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-800/40 hover:border-emerald-500"
+                  }`}
+                >
+                  <Store size={18} className="text-emerald-700 dark:text-emerald-400" />
+                  <span className="text-sm font-extrabold text-stone-900 dark:text-white">
+                    Seller (Farmer)
+                  </span>
+                  <span className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">
+                    Grade crops with AI and sell your produce
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData((f) => ({ ...f, role: "buyer" }))}
+                  className={`flex flex-col items-start gap-1.5 p-4 rounded-2xl border text-left transition ${
+                    formData.role === "buyer"
+                      ? "border-sky-700 bg-sky-50/80 dark:bg-sky-950/40 dark:border-sky-600 ring-2 ring-sky-600/30"
+                      : "border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-800/40 hover:border-sky-500"
+                  }`}
+                >
+                  <ShoppingBasket size={18} className="text-sky-700 dark:text-sky-400" />
+                  <span className="text-sm font-extrabold text-stone-900 dark:text-white">
+                    Buyer
+                  </span>
+                  <span className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">
+                    Browse graded lots and contact farmers
+                  </span>
+                </button>
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={loading}

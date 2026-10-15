@@ -25,6 +25,8 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import UnderConstruction from "./pages/UnderConstruction";
 import UserDashboard from "./pages/UserDashboard";
+import SellerDashboard from "./pages/SellerDashboard";
+import BuyerDashboard from "./pages/BuyerDashboard";
 
 import GovSchemeAdvisor from "./pages/GovSchemeAdvisor";
 
@@ -69,6 +71,21 @@ function App() {
         <Route path="/user-dashboard" element={
           <ProtectedRoute>
             <UserDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/seller-dashboard" element={
+          <ProtectedRoute>
+            <SellerDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/buyer-dashboard" element={
+          <ProtectedRoute>
+            <BuyerDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/marketplace" element={
+          <ProtectedRoute>
+            <BuyerDashboard />
           </ProtectedRoute>
         } />
         {/* Coming Soon */}

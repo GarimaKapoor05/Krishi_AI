@@ -15,6 +15,8 @@ import {
   ArrowRight,
   ExternalLink,
   ShieldCheck,
+  ShoppingBasket,
+  Store,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import ThemeSwitcher from "./ThemeSwitcher";
@@ -79,7 +81,10 @@ export default function Navbar() {
     { to: "/fertilizer-prediction", label: t("modules.fertilizer_advisor", { defaultValue: "Fertilizer" }) },
     { to: "/features/irrigation", label: t("nav.irrigation_advisor", { defaultValue: "Irrigation" }) },
     { to: "/features/price-prediction", label: t("modules.price_forecaster", { defaultValue: "Mandi Prices" }) },
+    { to: "/marketplace", label: t("nav.marketplace", { defaultValue: "Marketplace" }) },
   ];
+
+  const isSeller = (user?.role || "seller") === "seller";
 
   const languages = [
     { code: "en", label: "English", native: "English", sub: "Global" },
@@ -226,6 +231,28 @@ export default function Navbar() {
                         >
                           <LayoutDashboard size={16} className="text-emerald-600" />
                           {t("nav.my_dashboard", { defaultValue: "My Dashboard" })}
+                        </Link>
+
+                        <Link
+                          to={isSeller ? "/seller-dashboard" : "/buyer-dashboard"}
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-stone-700 dark:text-stone-200 hover:bg-sky-50 dark:hover:bg-sky-950/40 hover:text-sky-800 transition"
+                        >
+                          <Store size={16} className="text-sky-600" />
+                          {isSeller
+                            ? t("nav.seller_dashboard", { defaultValue: "Seller Dashboard" })
+                            : t("nav.buyer_dashboard", { defaultValue: "Buyer Dashboard" })}
+                        </Link>
+
+                        <Link
+                          to={isSeller ? "/buyer-dashboard" : "/seller-dashboard"}
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-stone-700 dark:text-stone-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-800 transition"
+                        >
+                          <ShoppingBasket size={16} className="text-emerald-600" />
+                          {isSeller
+                            ? t("nav.buyer_view", { defaultValue: "Buyer View" })
+                            : t("nav.seller_view", { defaultValue: "Seller View" })}
                         </Link>
 
                         <button
@@ -405,11 +432,25 @@ export default function Navbar() {
 
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <Link
-                  to="/user-dashboard"
+                  to={isSeller ? "/seller-dashboard" : "/buyer-dashboard"}
                   onClick={() => setMobileMenuOpen(false)}
                   className="w-full text-center py-2.5 rounded-xl text-xs font-bold bg-emerald-800 text-white"
                 >
+                  {isSeller ? "Seller Dashboard" : "Buyer Dashboard"}
+                </Link>
+                <Link
+                  to="/user-dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center py-2.5 rounded-xl text-xs font-bold border border-stone-300 dark:border-stone-700 text-stone-800 dark:text-white bg-white dark:bg-stone-900"
+                >
                   My Dashboard
+                </Link>
+                <Link
+                  to={isSeller ? "/buyer-dashboard" : "/seller-dashboard"}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center py-2.5 rounded-xl text-xs font-bold border border-stone-300 dark:border-stone-700 text-stone-800 dark:text-white bg-white dark:bg-stone-900"
+                >
+                  {isSeller ? "Buyer View" : "Seller View"}
                 </Link>
                 <button
                   type="button"
