@@ -81,6 +81,7 @@ export default function Navbar() {
     { to: "/fertilizer-prediction", label: t("modules.fertilizer_advisor", { defaultValue: "Fertilizer" }) },
     { to: "/features/irrigation", label: t("nav.irrigation_advisor", { defaultValue: "Irrigation" }) },
     { to: "/features/price-prediction", label: t("modules.price_forecaster", { defaultValue: "Mandi Prices" }) },
+    { to: "/features/market-intelligence", label: t("nav.market_intel", { defaultValue: "Market Intelligence" }) },
     { to: "/marketplace", label: t("nav.marketplace", { defaultValue: "Marketplace" }) },
   ];
 

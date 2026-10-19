@@ -96,6 +96,14 @@ Farmers receive actionable insights in their preferred language (English, Hindi,
 - LSTM model for price forecasting
 - Helps decide best time to sell
 
+### 🧭 Market Intelligence (Sell / Hold / Compare)
+- Real mandi prices from **AGMARKNET** (data.gov.in) + keyless weather from **Open-Meteo**
+- Trend analysis, seasonality, volatility and 7/15/30-day forecasts with backtested reliability
+- Explainable **Sell Now / Hold / Sell Partially / Compare Markets** advice, net of transport,
+  fees, storage and crop-specific perishability
+- Per-market net-return ranking; gracefully falls back to a bundled historical sample dataset
+  (Madhya Pradesh, 2023) when no live API key is configured
+
 ### 🔐 Secure Authentication
 - User registration with farm profile
 - JWT-based authentication
@@ -148,6 +156,7 @@ Farmers receive actionable insights in their preferred language (English, Hindi,
           │  Fertilizer Recommendation           │
           │  Irrigation Advisor                  │
           │  Price Forecasting (LSTM)            │
+          │  Market Intelligence (Sell/Hold)     │
           │  User Management                     │
           └──────────────────────────────────────┘
                                │
@@ -205,6 +214,11 @@ Backend will run at:
 ```
 http://localhost:5000
 ```
+
+**Environment variables** (optional): copy `Backend/.env.example` to `Backend/.env`.
+Set `DATA_GOV_API_KEY` (free from https://data.gov.in) to enable **live** AGMARKNET
+mandi prices for the Market Intelligence module. Without it, that module uses the
+bundled historical sample dataset. Weather (Open-Meteo) needs no key.
 
 ---
 

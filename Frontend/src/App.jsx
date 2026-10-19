@@ -20,6 +20,7 @@ import ComingSoon from "./pages/ComingSoon";
 import DiseaseDetection from "./pages/DiseaseDetection";
 import Dashboard from "./pages/Dashboard";
 import MarketPricePrediction from "./pages/MarketPricePrediction";
+import MarketIntelligence from "./pages/MarketIntelligence";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -66,6 +67,7 @@ function App() {
         <Route path="/features/irrigation" element={<SmartIrrigationAdvisor />} />
         <Route path="/disease-detection" element={<DiseaseDetection />} />
         <Route path="/features/price-prediction" element={<MarketPricePrediction />} />
+        <Route path="/features/market-intelligence" element={<MarketIntelligence />} />
 
         {/* Protected Routes */}
         <Route path="/user-dashboard" element={

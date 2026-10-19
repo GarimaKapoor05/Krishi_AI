@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   Calendar,
   Sparkles,
+  LineChart,
 } from "lucide-react";
 import {
   AreaChart,
@@ -76,6 +77,15 @@ const modules = [
     status: "live",
     badge: "LSTM 24h",
     color: "from-teal-700 to-emerald-800",
+  },
+  {
+    titleKey: "market_intelligence",
+    descKey: "market_intelligence_desc",
+    icon: LineChart,
+    link: "/features/market-intelligence",
+    status: "live",
+    badge: "Sell / Hold",
+    color: "from-emerald-700 to-teal-900",
   },
   {
     titleKey: "disease_detection",

@@ -14,7 +14,7 @@ class Config:
 
     SQLALCHEMY_DATABASE_URI = (
         _DATABASE_URL
-        or "sqlite:///" + os.path.join(_BASE_DIR, "instance", "krishimitra.db")
+        or "sqlite:///" + os.path.join(_BASE_DIR, "instance", "krishiai.db")
     )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
