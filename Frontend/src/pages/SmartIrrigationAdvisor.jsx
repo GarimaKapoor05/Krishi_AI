@@ -1,434 +1,292 @@
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { API_URL } from "../config";
+import { getFarmWeather } from "../services/weatherLocation";
+import { getFarmCrop, readFarmProfile } from "../services/farmProfile";
 import { useTranslation } from "react-i18next";
 import {
-  Droplets,
-  Thermometer,
+  AlertTriangle,
+  ArrowRight,
+  CalendarDays,
+  CheckCircle2,
   CloudRain,
+  Droplets,
+  Info,
   Leaf,
   Loader2,
-  AlertTriangle,
-  CheckCircle2,
-  Clock3,
-  TrendingUp,
-  Sparkles,
-  ShieldCheck,
-  ArrowRight,
-  Info,
+  MapPin,
+  Sprout,
+  Wheat,
 } from "lucide-react";
+
+const SOILS = [
+  ["alluvial", "River soil"],
+  ["black", "Black soil"],
+  ["red_yellow", "Red soil"],
+  ["laterite", "Laterite (hard red soil)"],
+  ["arid_sandy", "Sandy soil"],
+  ["loamy_clay", "Clay or mixed soil"],
+  ["unknown", "I don't know"],
+];
+
+const formatStage = (value = "") => ({
+  Initial: "Newly planted", "Germination / emergence": "New shoots", "Crop development": "Growing",
+  "Vegetative growth": "Growing leaves and stems", "Mid-season": "Flowering or fruiting",
+  Flowering: "Flowering", "Fruiting / grain formation": "Fruit or grain growing",
+  "Late season": "Ripening", "Ripening / maturity": "Ripening", "Harvest ready": "Ready to harvest",
+}[value] || value);
+const formatRecommendation = (value = "") => value.startsWith("Irrigation likely needed")
+  ? "Check the soil today. If it feels dry near the roots, water your crop."
+  : value.startsWith("Plan to irrigate around")
+    ? `Check the soil around ${formatDay(value.split(" ").at(-1))}. Water only if it feels dry near the roots.`
+    : "This estimate does not show a need to water this week. Keep checking the soil.";
+
+const formatDay = (value) => new Intl.DateTimeFormat("en-IN", {
+  weekday: "short", day: "numeric", month: "short",
+}).format(new Date(`${value}T00:00:00`));
+
+const localToday = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+};
+
+const asHectares = (area, unit) => {
+  const parsed = Number(area);
+  if (!Number.isFinite(parsed) || parsed <= 0) return "";
+  return String(unit === "acres" ? parsed * 0.404686 : parsed);
+};
+
+function Metric({ label, value, detail, icon: Icon, tone = "emerald" }) {
+  const tones = {
+    emerald: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+    blue: "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300",
+    amber: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+    stone: "bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300",
+  };
+  return (
+    <div className="rounded-2xl border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-medium text-stone-500 dark:text-stone-400">{label}</p>
+          <p className="mt-1 text-xl font-bold tracking-tight text-stone-900 dark:text-white">{value}</p>
+          {detail && <p className="mt-1 text-[11px] leading-relaxed text-stone-500 dark:text-stone-400">{detail}</p>}
+        </div>
+        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${tones[tone]}`}><Icon size={17} /></span>
+      </div>
+    </div>
+  );
+}
 
 export default function SmartIrrigationAdvisor() {
   const { t } = useTranslation();
-
-  const [formData, setFormData] = useState({
-    moisture: "",
-    humidity: "",
-    temp: "",
-    et: "",
-    crop: "", });
-
+  const [weather, setWeather] = useState(null);
+  const [weatherStatus, setWeatherStatus] = useState("Loading your farm's seven-day forecast…");
+  const [formData, setFormData] = useState(() => {
+    const profile = readFarmProfile();
+    const location = profile?.farmLocation || {};
+    const active = profile?.farmingStatus === "active";
+    return {
+      crop: getFarmCrop(profile),
+      sowing_date: active ? profile?.activeFarming?.sowingDate || "" : profile?.planningFarming?.plannedSowingPeriod || "",
+      crop_stage: active ? profile?.activeFarming?.cropStage || "" : "",
+      soil_type: location.soilType || "unknown",
+      area_ha: asHectares(location.farmSize, location.measurementUnit),
+      field_condition: "",
+    };
+  });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
   const resultRef = useRef(null);
+  const knownCrops = useMemo(() => [
+    "Wheat", "Rice", "Maize", "Tomato", "Potato", "Cotton", "Soybean", "Mustard",
+    "Sugarcane", "Chickpea", "Groundnut", "Millet", "Onion", "Chili", "Mango",
+  ], []);
 
-  const handleChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-  };
-
-  const applyPreset = (type) => {
-    if (type === "dry") {
-      setFormData({ moisture: "18", humidity: "45", temp: "34", et: "6.2" });
-    } else if (type === "adequate") {
-      setFormData({ moisture: "48", humidity: "75", temp: "26", et: "3.8" });
+  useEffect(() => {
+    let active = true;
+    const profile = readFarmProfile();
+    const farmLocation = profile?.farmLocation;
+    if (!farmLocation) {
+      setWeatherStatus("Add your farm location during setup to get local weather automatically.");
+      return () => { active = false; };
     }
+
+    getFarmWeather(farmLocation).then((data) => {
+      if (!active) return;
+      setWeather(data);
+      setWeatherStatus(`${data.locationName} · local 7-day forecast`);
+    }).catch((weatherError) => {
+      if (active) setWeatherStatus(weatherError.message || "Local weather is unavailable. Try again later.");
+    });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (result && resultRef.current) resultRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [result]);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((previous) => ({ ...previous, [name]: value }));
+    if (result) setResult(null);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    setLoading(true);
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError("");
     setResult(null);
-
+    if (!weather?.days?.length) {
+      setError("We need your farm location to get local weather. Check your saved location and try again.");
+      return;
+    }
+    setLoading(true);
     try {
       const payload = {
-        moisture: parseFloat(formData.moisture),
-        humidity: parseFloat(formData.humidity),
-        temp: parseFloat(formData.temp),
-        et: parseFloat(formData.et || 4.5),
-        crop: formData.crop || "general", // FIX 13b 
+        ...formData,
+        forecast: weather.days.map(({ date, et0_mm, rainfall_mm }) => ({ date, et0_mm, rainfall_mm })),
       };
-
       const response = await fetch(`${API_URL}/irrigation/predict`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate recommendation.");
-      }
-
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `Irrigation service returned ${response.status}.`);
+      if (!Array.isArray(data.daily)) throw new Error("The backend needs the updated crop-water scheduler. Restart the backend and try again.");
       setResult(data);
-    } catch (err) {
-      console.error(err);
-      setError(
-        t("irrigationAdvisor.errBackend", {
-          defaultValue:
-            "Unable to connect to the AI service. Please ensure the Flask backend is running.",
-        })
-      );
+    } catch (requestError) {
+      setError(requestError.message || t("irrigationAdvisor.errBackend", { defaultValue: "Unable to create an irrigation estimate. Please try again." }));
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (result && resultRef.current) {
-      resultRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }
-  }, [result]);
-
-  const priorityStyle = {
-    High: {
-      badge: "bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-300 border-red-300 dark:border-red-800",
-      icon: "🔴",
-      gradient: "from-red-900 via-rose-900 to-stone-900",
-    },
-    Medium: {
-      badge: "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800",
-      icon: "🟡",
-      gradient: "from-amber-900 via-yellow-900 to-stone-900",
-    },
-    Low: {
-      badge: "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800",
-      icon: "🟢",
-      gradient: "from-emerald-900 via-teal-900 to-stone-900",
-    },
-  };
-
-  const isNoIrrigation = result?.recommendation?.toLowerCase().includes("no");
+  const priority = result?.urgency === "High"
+    ? "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200"
+    : result?.urgency === "Medium"
+      ? "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+      : "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200";
 
   return (
-    <div className="min-h-screen bg-bg-light dark:bg-bg-dark text-stone-900 dark:text-stone-100 pt-28 pb-20 px-4 sm:px-6 lg:px-8 transition-colors duration-200">
-      <div className="max-w-5xl mx-auto space-y-10">
-
-        {/* ── Page Header ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center max-w-3xl mx-auto space-y-4"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-100 dark:bg-sky-950/60 border border-sky-300/60 dark:border-sky-800 text-sky-900 dark:text-sky-200 text-xs sm:text-sm font-bold shadow-xs">
-            <Droplets size={16} className="text-sky-700 dark:text-sky-400" />
-            <span>Smart Moisture & Water Schedule Advisor</span>
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-stone-900 dark:text-white">
-            {t("irrigationAdvisor.title", { defaultValue: "Smart Irrigation Advisor" })}
-          </h1>
-
-          <p className="text-stone-600 dark:text-stone-300 text-base sm:text-lg leading-relaxed">
-            {t("irrigationAdvisor.desc", {
-              defaultValue:
-                "Enter your field's soil moisture and weather conditions. KrishiAI tells you immediately whether watering is needed today, saving water and preventing root rot.",
-            })}
-          </p>
-
-          {/* Quick presets */}
-          <div className="pt-2 flex flex-wrap items-center justify-center gap-2 text-xs font-semibold">
-            <span className="text-stone-500 dark:text-stone-400">Quick field scenarios:</span>
-            <button
-              type="button"
-              onClick={() => applyPreset("dry")}
-              className="px-3 py-1.5 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:border-sky-500 text-stone-700 dark:text-stone-200 transition"
-            >
-              ☀️ Dry Soil (Moisture 18%)
-            </button>
-            <button
-              type="button"
-              onClick={() => applyPreset("adequate")}
-              className="px-3 py-1.5 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:border-sky-500 text-stone-700 dark:text-stone-200 transition"
-            >
-              💧 Moist Soil (Moisture 48%)
-            </button>
-          </div>
-        </motion.div>
-
-        {/* ── Input Form ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white dark:bg-stone-900 rounded-3xl shadow-card p-6 sm:p-10 border border-stone-200 dark:border-stone-800 space-y-8"
-        >
+    <div className="min-h-screen bg-bg-light px-4 pb-16 pt-24 text-stone-900 transition-colors dark:bg-bg-dark dark:text-stone-100 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <motion.header initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col justify-between gap-4 rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900 sm:flex-row sm:items-end sm:p-7">
           <div>
-            <h2 className="font-extrabold text-lg text-stone-900 dark:text-white">
-              {t("irrigationAdvisor.fieldConditions", { defaultValue: "Field Sensor Readings" })}
-            </h2>
-            <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
-              {t("irrigationAdvisor.demoNote", { defaultValue: "Readings from soil probe or approximate field moisture." })}
-            </p>
+            <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-800 dark:bg-sky-950/50 dark:text-sky-200"><Droplets size={14} /> Watering plan</div>
+            <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">{t("irrigationAdvisor.title", { defaultValue: "Smart Irrigation Advisor" })}</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-600 dark:text-stone-300">See how much water your crop may use this week, how rain may help, and when to check the soil before watering.</p>
           </div>
+          <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400 sm:max-w-64"><MapPin size={15} className="shrink-0 text-emerald-700" /><span>{weatherStatus}</span></div>
+        </motion.header>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid sm:grid-cols-2 gap-5">
-              {[
-                {
-                  name: "moisture",
-                  label: t("irrigationAdvisor.moisture", { defaultValue: "Soil Moisture (%)" }),
-                  sub: "Crucial indicator of root-zone water",
-                  placeholder: t("irrigationAdvisor.placeholderMoisture", { defaultValue: "e.g. 25" }),
-                  icon: Droplets,
-                  color: "text-sky-600",
-                },
-                {
-                  name: "humidity",
-                  label: t("irrigationAdvisor.humidity", { defaultValue: "Air Humidity (%)" }),
-                  sub: "Atmospheric relative humidity",
-                  placeholder: t("irrigationAdvisor.placeholderHumidity", { defaultValue: "e.g. 65" }),
-                  icon: CloudRain,
-                  color: "text-blue-600",
-                },
-                {
-                  name: "temp",
-                  label: t("irrigationAdvisor.temp", { defaultValue: "Temperature (°C)" }),
-                  sub: "Ambient field heat index",
-                  placeholder: t("irrigationAdvisor.placeholderTemp", { defaultValue: "e.g. 30" }),
-                  icon: Thermometer,
-                  color: "text-amber-600",
-                },
-                {
-                  name: "et",
-                  label: t("irrigationAdvisor.et", { defaultValue: "Evapotranspiration (mm/day)" }),
-                  sub: "Moisture evaporation rate (Default: 4.5)",
-                  placeholder: t("irrigationAdvisor.placeholderEt", { defaultValue: "e.g. 5.3" }),
-                  icon: Leaf,
-                  color: "text-emerald-600",
-                },
-              ].map((field) => {
-                const Icon = field.icon;
-                return (
-                  <div key={field.name} className="space-y-1.5">
-                    <div className="flex items-baseline justify-between">
-                      <label className="text-xs sm:text-sm font-bold text-stone-800 dark:text-stone-200">
-                        {field.label}
-                      </label>
-                      <span className="text-[11px] text-stone-400">{field.sub}</span>
-                    </div>
-
-                    <div className="flex items-center border border-stone-200 dark:border-stone-700 rounded-2xl px-4 py-3.5 bg-stone-50/50 dark:bg-stone-800/40 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:bg-white dark:focus-within:bg-stone-900 transition">
-                      <Icon className={`${field.color} mr-3 shrink-0`} size={18} />
-                      <input
-                        type="number"
-                        name={field.name}
-                        value={formData[field.name]}
-                        onChange={handleChange}
-                        placeholder={field.placeholder}
-                        step="0.1"
-                        required
-                        className="w-full outline-none bg-transparent text-stone-900 dark:text-white font-semibold text-sm sm:text-base placeholder:font-normal placeholder:text-stone-400"
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-              //FIX 13c
-              {/* Crop selector */}
-              <div className="space-y-1.5 sm:col-span-2">
-                <label className="text-xs sm:text-sm font-bold text-stone-800 dark:text-stone-200">
-                  Crop Type <span className="text-stone-400 font-normal">(for specific tips)</span>
-                </label>
-                <div className="flex items-center border border-stone-200 dark:border-stone-700 rounded-2xl px-4 py-3.5 bg-stone-50/50 dark:bg-stone-800/40 focus-within:ring-2 focus-within:ring-emerald-500 transition">
-                  <Leaf className="text-emerald-600 mr-3 shrink-0" size={18} />
-                  <select
-                    name="crop"
-                    value={formData.crop}
-                    onChange={handleChange}
-                    className="w-full outline-none bg-transparent text-stone-900 dark:text-white font-semibold text-sm"
-                  >
-                    <option value="general">General / Mixed</option>
-                    <option value="rice">Rice</option>
-                    <option value="maize">Maize</option>
-                    <option value="cotton">Cotton</option>
-                    <option value="wheat">Wheat</option>
-                    <option value="soybean">Soybean</option>
-                  </select>
-                </div>
-              </div>
+        <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(290px,0.9fr)]">
+          <form onSubmit={handleSubmit} className="space-y-5 rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900 sm:p-6">
+            <div>
+              <h2 className="text-lg font-bold">Your crop and field</h2>
+              <p className="mt-1 text-xs leading-relaxed text-stone-500 dark:text-stone-400">Your saved farm details are filled in for you. Change them only if this field is different.</p>
             </div>
 
-            <div className="pt-4 border-t border-stone-100 dark:border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <span className="text-xs text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
-                <ShieldCheck size={16} className="text-emerald-600" />
-                FAO Evapotranspiration formula & soil saturation threshold calculation
-              </span>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="space-y-1.5 text-xs font-semibold text-stone-700 dark:text-stone-300">
+                Crop
+                <input list="irrigation-crop-options" name="crop" value={formData.crop} onChange={handleChange} required placeholder="Choose or type a crop" className="input-base" />
+                <datalist id="irrigation-crop-options">{knownCrops.map((crop) => <option key={crop} value={crop} />)}</datalist>
+              </label>
+              <label className="space-y-1.5 text-xs font-semibold text-stone-700 dark:text-stone-300">
+                Planting date
+                <input type="date" name="sowing_date" value={formData.sowing_date} onChange={handleChange} required max={localToday()} className="input-base" />
+              </label>
+              <label className="space-y-1.5 text-xs font-semibold text-stone-700 dark:text-stone-300">
+                What kind of soil do you have?
+                <select name="soil_type" value={formData.soil_type} onChange={handleChange} className="input-base">{SOILS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+              </label>
+              <label className="space-y-1.5 text-xs font-semibold text-stone-700 dark:text-stone-300">
+                What is the crop doing now? <span className="font-normal text-stone-400">(optional)</span>
+                <select name="crop_stage" value={formData.crop_stage} onChange={handleChange} className="input-base">
+                  <option value="">Work it out from planting date</option>
+                  <option value="germination">Just planted / new shoots</option>
+                  <option value="vegetative">Growing leaves and stems</option>
+                  <option value="flowering">Flowering</option>
+                  <option value="fruiting">Flowers or fruit / grain growing</option>
+                  <option value="ripening">Fruit or grain ripening</option>
+                  <option value="harvest">Ready to harvest</option>
+                </select>
+              </label>
+              <label className="space-y-1.5 text-xs font-semibold text-stone-700 dark:text-stone-300">
+                Farm area <span className="font-normal text-stone-400">(optional)</span>
+                <div className="flex gap-2">
+                  <input type="number" name="area_ha" min="0" step="0.01" value={formData.area_ha} onChange={handleChange} placeholder="e.g. 1.2" className="input-base min-w-0 flex-1" />
+                  <span className="inline-flex items-center rounded-xl border border-stone-200 px-3 text-xs text-stone-500 dark:border-stone-700">hectares</span>
+                </div>
+              </label>
+            </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full sm:w-auto min-w-[260px] bg-gradient-to-r from-emerald-800 to-emerald-900 hover:from-emerald-900 hover:to-black text-white px-8 py-4 rounded-2xl font-bold text-base shadow-lg shadow-emerald-900/15 hover:shadow-xl transition-all disabled:opacity-70 flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="animate-spin" size={20} />
-                    <span>{t("irrigationAdvisor.generating", { defaultValue: "Generating Recommendation..." })}</span>
-                  </>
-                ) : (
-                  <>
-                    <span>💧 {t("irrigationAdvisor.btnPredict", { defaultValue: "Check Irrigation Need" })}</span>
-                    <ArrowRight size={18} />
-                  </>
-                )}
+            <fieldset>
+              <legend className="text-xs font-semibold text-stone-700 dark:text-stone-300">Touch the soil near the plant roots. How does it feel?</legend>
+              <p className="mb-2 mt-1 text-[11px] text-stone-500 dark:text-stone-400">This quick check helps us make a better estimate. It is not a sensor reading.</p>
+              <div className="grid grid-cols-3 gap-2">
+                {[["wet", "Still wet", "Feels damp"], ["moist", "A little moist", "Some moisture"], ["dry", "Dry to touch", "Feels dry"]].map(([value, label, hint]) => (
+                  <button key={value} type="button" aria-pressed={formData.field_condition === value} onClick={() => { setFormData((previous) => ({ ...previous, field_condition: value })); setResult(null); }} className={`min-h-16 rounded-xl border px-2 py-2 text-left transition ${formData.field_condition === value ? "border-emerald-700 bg-emerald-50 ring-1 ring-emerald-700 dark:bg-emerald-950/40" : "border-stone-200 hover:border-stone-400 dark:border-stone-700"}`}>
+                    <span className="block text-xs font-bold">{label}</span><span className="mt-0.5 block text-[10px] text-stone-500 dark:text-stone-400">{hint}</span>
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <div className="flex flex-col gap-3 border-t border-stone-100 pt-4 dark:border-stone-800 sm:flex-row sm:items-center sm:justify-between">
+              <p className="flex items-start gap-2 text-[11px] leading-relaxed text-stone-500 dark:text-stone-400"><Info size={14} className="mt-0.5 shrink-0 text-sky-700" /> We use your farm’s seven-day weather forecast. No need to enter the weather again.</p>
+              <button type="submit" disabled={loading || !weather?.days?.length || !formData.field_condition} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
+                {loading ? <><Loader2 size={16} className="animate-spin" /> Making your watering plan…</> : <>Make my watering plan <ArrowRight size={16} /></>}
               </button>
             </div>
+            {error && <div role="alert" className="flex gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200"><AlertTriangle size={17} className="mt-0.5 shrink-0" />{error}</div>}
           </form>
 
-          {error && (
-            <div className="rounded-2xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 p-4 flex gap-3 text-red-800 dark:text-red-300 text-sm">
-              <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-              <span>{error}</span>
+          <aside className="space-y-4 rounded-3xl border border-stone-200 bg-stone-50 p-5 dark:border-stone-800 dark:bg-stone-900/70 sm:p-6">
+            <div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"><Sprout size={19} /></span><div><h2 className="text-sm font-bold">How this estimate helps</h2><p className="text-[11px] text-stone-500 dark:text-stone-400">Your farm details and local weather</p></div></div>
+            <div className="space-y-3 text-xs leading-relaxed text-stone-600 dark:text-stone-300">
+              <div className="flex gap-2"><CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-700" /><p><strong className="text-stone-800 dark:text-stone-100">Your crop:</strong> we use your crop and planting date to estimate its growth stage.</p></div>
+              <div className="flex gap-2"><CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-700" /><p><strong className="text-stone-800 dark:text-stone-100">Rain:</strong> expected rain may reduce how much extra water the field needs.</p></div>
+              <div className="flex gap-2"><CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-700" /><p><strong className="text-stone-800 dark:text-stone-100">Your soil:</strong> soil type helps us estimate how long the field may hold water.</p></div>
             </div>
-          )}
-        </motion.div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-900 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-200">This is a field-planning estimate, not a guaranteed irrigation prescription. Actual soil water capacity, crop variety, rain infiltration, slope, and irrigation-system losses vary.</div>
+          </aside>
+        </motion.section>
 
-        {/* ── Results Section ── */}
         <div ref={resultRef}>
           {result && (
-            <motion.div
-              initial={{ opacity: 0, y: 25 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-8"
-            >
-              {/* Primary Decision Banner */}
-              <div
-                className={`bg-gradient-to-br ${
-                  isNoIrrigation
-                    ? "from-emerald-900 via-teal-900 to-stone-900"
-                    : "from-sky-950 via-blue-900 to-stone-900"
-                } rounded-3xl p-8 sm:p-10 text-white shadow-card relative overflow-hidden`}
-              >
-                <div className="absolute right-0 top-0 w-96 h-96 bg-white/5 rounded-full blur-3xl pointer-events-none" />
-
-                <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="text-xs font-bold uppercase tracking-wider bg-black/40 text-emerald-300 border border-white/10 px-3.5 py-1.5 rounded-full">
-                        AI Irrigation Decision
-                      </span>
-
-                      {result.urgency && (
-                        <span
-                          className={`text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full border ${
-                            priorityStyle[result.urgency]?.badge || "bg-stone-800 text-white"
-                          }`}
-                        >
-                          {priorityStyle[result.urgency]?.icon} {result.urgency}{" "}
-                          {t("irrigationAdvisor.priority", { defaultValue: "Priority" })}
-                        </span>
-                      )}
-                    </div>
-
-                    <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white flex items-center gap-3">
-                      <span>{isNoIrrigation ? "🌱" : "💧"}</span>
-                      <span>{result.recommendation}</span>
-                    </h2>
-
-                    <p className="text-stone-200 text-sm sm:text-base max-w-xl">
-                      {result.advice || t("irrigationAdvisor.recDesc", { defaultValue: "Generated using your real-time field moisture readings." })}
-                    </p>
-                  </div>
-
-                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/10 shrink-0 text-center md:min-w-[200px]">
-                    <span className="text-xs text-sky-200 block font-semibold mb-1">
-                      {t("irrigationAdvisor.waterRequired", { defaultValue: "Water Required" })}
-                    </span>
-                    <span className="text-4xl font-black text-white">
-                      {result.water_amount_mm ?? 0}
-                    </span>
-                    <span className="text-xs text-sky-200 block mt-1">mm depth</span>
+            <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 scroll-mt-24" aria-live="polite">
+              <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900 sm:p-6">
+                <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                  <div><p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500">Your watering plan for the next 7 days</p><h2 className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">{formatRecommendation(result.recommendation)}</h2><p className="mt-1 text-xs text-stone-600 dark:text-stone-300">Crop stage: {formatStage(result.current_stage)} · Day {result.crop_age_days + 1}</p></div>
+                  <span className={`inline-flex w-fit items-center rounded-full border px-3 py-1.5 text-xs font-semibold ${priority}`}>{result.urgency === "High" ? "Check today" : result.urgency === "Medium" ? "Check soon" : "Low need"}</span>
+                </div>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <Metric label="Water your crop may use this week" value={`${result.crop_water_demand_7d_mm} mm`} detail="mm means a thin layer of water (1 litre per square metre)" icon={Leaf} />
+                  <Metric label="Rain that may soak in" value={`${result.effective_rainfall_7d_mm} mm`} detail="Estimated from this week’s forecast" icon={CloudRain} tone="blue" />
+                  <Metric label="Extra water estimate" value={`${result.water_amount_mm} mm`} detail={result.trigger_date ? `Check soil around ${formatDay(result.trigger_date)}` : "Check the soil before watering"} icon={Droplets} tone={result.water_amount_mm ? "amber" : "emerald"} />
+                  <Metric label="For your whole farm" value={result.water_volume_m3 == null ? (result.water_amount_mm ? "Add farm area" : "—") : `${Math.round(result.water_volume_m3 * 1000).toLocaleString("en-IN")} litres`} detail={result.area_ha ? `For ${result.area_ha} hectares · estimated amount` : "Farm area not available"} icon={Wheat} tone="stone" />
+                </div>
+                <div className="mt-5 overflow-hidden rounded-2xl border border-stone-200 dark:border-stone-800">
+                  <div className="flex items-center gap-2 border-b border-stone-200 bg-stone-50 px-4 py-3 dark:border-stone-800 dark:bg-stone-950/40"><CalendarDays size={15} className="text-emerald-700" /><h3 className="text-xs font-bold">Each day: crop water and rain</h3></div>
+                  <div className="divide-y divide-stone-100 dark:divide-stone-800">
+                    {result.daily.map((day) => <div key={day.date} className="grid grid-cols-[minmax(78px,1.25fr)_minmax(60px,1fr)_repeat(3,minmax(32px,0.45fr))] items-center gap-2 px-3 py-3 text-[11px] sm:grid-cols-[minmax(100px,1.2fr)_minmax(120px,1fr)_repeat(3,minmax(54px,0.65fr))] sm:px-4 sm:text-xs">
+                      <div className="min-w-0"><p className="font-semibold text-stone-800 dark:text-stone-100">{formatDay(day.date)}</p><p className="mt-0.5 truncate text-[10px] text-stone-500">{formatStage(day.stage)}</p></div>
+                      <div className="min-w-0 text-stone-600 dark:text-stone-300">{day.trigger ? <span className="inline-flex rounded-full bg-amber-100 px-1.5 py-1 text-[9px] font-bold text-amber-900 dark:bg-amber-950/50 dark:text-amber-200 sm:px-2 sm:text-[10px]"><span className="sm:hidden">Water</span><span className="hidden sm:inline">Water today</span></span> : <span className="break-words">{day.root_zone_depletion_mm} mm soil may dry</span>}</div>
+                      <div className="text-right"><span className="block text-[9px] text-stone-400">Crop water</span><span className="font-semibold">{day.etc_mm}</span></div>
+                      <div className="text-right"><span className="block text-[9px] text-stone-400">Rain</span><span className="font-semibold">{day.rainfall_mm}</span></div>
+                      <div className="text-right"><span className="block text-[9px] text-stone-400">Stage</span><span className="font-semibold">{day.kc}</span></div>
+                    </div>)}
                   </div>
                 </div>
+                <p className="mt-4 text-[11px] leading-relaxed text-stone-600 dark:text-stone-300">{result.advice}</p>
+                <details className="mt-3 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-[11px] text-stone-600 dark:border-stone-800 dark:bg-stone-950/30 dark:text-stone-300"><summary className="cursor-pointer font-semibold">How did we work this out?</summary><p className="mt-2 leading-relaxed">The estimate uses your crop, planting date, soil type and the next 7 days of weather. It estimates crop water use and subtracts some expected rain. Soil and field conditions differ, so touch the soil before watering. This is a guide, not a guaranteed schedule.</p></details>
+                <p className="mt-1 text-[10px] text-stone-400">This is an estimate from your crop, growth stage, soil type and local weather. Check the soil before watering; your field may differ.</p>
               </div>
-
-              {/* 3 Metric Cards */}
-              <div className="grid md:grid-cols-3 gap-5">
-                <div className="p-6 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-card">
-                  <p className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">
-                    {t("irrigationAdvisor.recMethod", { defaultValue: "Recommended Technique" })}
-                  </p>
-                  <h4 className="text-2xl font-black text-stone-900 dark:text-white">
-                    {isNoIrrigation ? "Soil Monitoring" : "Drip Irrigation"}
-                  </h4>
-                  <p className="text-xs text-stone-400 mt-2">
-                    {isNoIrrigation
-                      ? "Root moisture remains within acceptable threshold."
-                      : "Direct root application minimizes solar evaporation loss."}
-                  </p>
-                </div>
-
-                <div className="p-6 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-card">
-                  <p className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">
-                    {t("irrigationAdvisor.nextIrrigation", { defaultValue: "Next Re-check Window" })}
-                  </p>
-                  <h4 className="text-2xl font-black text-emerald-800 dark:text-emerald-400">
-                    {isNoIrrigation ? "24+ Hours" : "Immediate Cycle"}
-                  </h4>
-                  <p className="text-xs text-stone-400 mt-2">
-                    Check sensor after morning evapotranspiration cycle.
-                  </p>
-                </div>
-
-                <div className="p-6 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-card">
-                  <p className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">
-                    {t("irrigationAdvisor.estSavings", { defaultValue: "Estimated Water Saved" })}
-                  </p>
-                  <h4 className="text-2xl font-black text-sky-700 dark:text-sky-400">
-                    {Math.max(0, Math.round(parseFloat(formData.et || 4.5) * 2))}%
-                  </h4>
-                  <p className="text-xs text-stone-400 mt-2">
-                    Compared to traditional surface flood irrigation.
-                  </p>
-                </div>
-              </div>
-
-              {/* Agronomic Observations */}
-              {result.insights && result.insights.length > 0 && (
-                <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-card p-6 sm:p-8 space-y-4">
-                  <h3 className="font-extrabold text-lg text-stone-900 dark:text-white flex items-center gap-2">
-                    <TrendingUp className="text-emerald-700 dark:text-emerald-400" size={20} />
-                    <span>{t("irrigationAdvisor.fieldObs", { defaultValue: "Agronomic Field Insights" })}</span>
-                  </h3>
-
-                  <div className="space-y-3">
-                    {result.insights.map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex items-start gap-3 p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200/60 dark:border-stone-700/60 text-sm text-stone-800 dark:text-stone-200"
-                      >
-                        <Info className="w-5 h-5 text-emerald-700 dark:text-emerald-400 shrink-0 mt-0.5" />
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </motion.div>
+            </motion.section>
           )}
         </div>
-
       </div>
     </div>
   );

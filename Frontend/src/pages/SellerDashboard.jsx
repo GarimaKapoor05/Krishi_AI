@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import {
   AlertCircle,
   Camera,
@@ -18,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { getFarmCrop, getFarmLocationLabel, readFarmProfile } from "../services/farmProfile";
 import GradeBadge from "../components/GradeBadge";
 import GradeReportCard from "../components/GradeReportCard";
 import {
@@ -47,6 +49,11 @@ const EMPTY_FORM = {
 
 const QUANTITY_UNITS = ["Quintals", "Tonnes", "Kg", "Crates", "Bags"];
 
+function newListingForm() {
+  const profile = readFarmProfile();
+  return { ...EMPTY_FORM, cropName: getFarmCrop(profile), location: getFarmLocationLabel(profile) };
+}
+
 function StatCard({ icon: Icon, label, value, tone }) {
   return (
     <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-xs">
@@ -71,7 +78,7 @@ export default function SellerDashboard() {
   const { user } = useAuth();
 
   const [tab, setTab] = useState("new");
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState(newListingForm);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [previewReport, setPreviewReport] = useState(null);
   const [grading, setGrading] = useState(false);
@@ -91,15 +98,19 @@ export default function SellerDashboard() {
 
   const refresh = useCallback(async () => {
     setLoading(true);
+    setError("");
     try {
-      const [mineRes, inqRes, statsRes] = await Promise.all([
+      const results = await Promise.allSettled([
         myListings(),
         receivedInquiries(),
         marketplaceStats(),
       ]);
-      setListings(mineRes.data.items || []);
-      setInquiries(inqRes.data.items || []);
-      setStats(statsRes.data);
+      const [mine, inquiryData, statsData] = results;
+      if (mine.status === "fulfilled") setListings(mine.value.data.items || []);
+      if (inquiryData.status === "fulfilled") setInquiries(inquiryData.value.data.items || []);
+      if (statsData.status === "fulfilled") setStats(statsData.value.data);
+      const rejected = results.find((result) => result.status === "rejected");
+      if (rejected) setError(apiError(rejected.reason, "Some seller information could not be loaded."));
     } catch (err) {
       setError(apiError(err, "Could not load your dashboard data."));
     } finally {
@@ -126,7 +137,7 @@ export default function SellerDashboard() {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
     setPreviewReport(null);
-    setForm(EMPTY_FORM);
+    setForm(newListingForm());
   };
 
   const runGradePreview = async () => {
@@ -210,20 +221,20 @@ export default function SellerDashboard() {
 
   return (
     <div className="min-h-screen bg-bg-light dark:bg-bg-dark text-stone-900 dark:text-stone-100 pt-28 pb-20 px-4 sm:px-6 lg:px-8 transition-colors">
-      <div className="max-w-7xl mx-auto space-y-8">
+        <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white/80 dark:bg-stone-900/80 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-stone-200/80 dark:border-stone-800 shadow-soft flex flex-col md:flex-row md:items-center md:justify-between gap-5"
+          className="bg-white dark:bg-stone-900 rounded-3xl p-5 sm:p-7 border border-stone-200 dark:border-stone-800 shadow-soft flex flex-col md:flex-row md:items-center md:justify-between gap-5"
         >
           <div>
             <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 bg-emerald-100/70 dark:bg-emerald-950/50 px-3 py-1 rounded-full mb-3">
               <Sprout size={14} />
               Seller Dashboard
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold">
-              Namaste, {user?.username || "Farmer"} 👋
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+              Namaste, <span className="break-all">{user?.username || "Farmer"}</span> 👋
             </h1>
             <p className="text-stone-500 dark:text-stone-400 mt-1 text-sm">
               Photograph your harvest, get an AI-assisted grade, and reach buyers directly.
@@ -268,9 +279,10 @@ export default function SellerDashboard() {
 
         {/* Alerts */}
         {error && (
-          <div className="flex items-start gap-2 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 px-4 py-3 rounded-2xl text-sm font-medium">
+          <div className="flex items-start gap-2 rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-950 dark:border-rose-800 dark:bg-rose-950/50 dark:text-rose-100" role="alert">
             <AlertCircle size={16} className="mt-0.5 shrink-0" />
-            <span>{error}</span>
+            <span className="flex-1">{error}</span>
+            {error.includes("Sign in again") && <Link to="/login" className="shrink-0 font-bold underline underline-offset-2">Sign in</Link>}
             <button className="ml-auto" onClick={() => setError("")} aria-label="Dismiss">
               <X size={15} />
             </button>
@@ -306,8 +318,8 @@ export default function SellerDashboard() {
 
         {/* ── New Listing Tab ── */}
         {tab === "new" && (
-          <div className="grid lg:grid-cols-5 gap-6">
-            <div className="lg:col-span-3 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-5 sm:p-6 space-y-4">
+        <div className="grid lg:grid-cols-12 gap-5 xl:gap-6 items-start">
+            <div className="lg:col-span-5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-5 sm:p-6 space-y-4">
               <h2 className="text-lg font-extrabold">Harvest details</h2>
 
               <div className="grid sm:grid-cols-2 gap-3">
@@ -460,7 +472,7 @@ export default function SellerDashboard() {
             </div>
 
             {/* Report preview column */}
-            <div className="lg:col-span-2 space-y-4">
+            <div className="lg:col-span-7 space-y-4">
               <div className="bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/70 dark:border-emerald-900/50 rounded-2xl p-4 text-xs text-stone-600 dark:text-stone-300">
                 <p className="font-bold text-emerald-900 dark:text-emerald-300 mb-1">
                   How grading works

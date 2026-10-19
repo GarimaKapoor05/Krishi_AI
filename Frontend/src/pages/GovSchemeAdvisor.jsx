@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
+import { getFarmCrop, readFarmProfile } from "../services/farmProfile";
 import { API_URL } from "../config";
 import {
   Landmark,
@@ -196,25 +197,26 @@ const selectCls =
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function GovSchemeAdvisor() {
   const { user } = useAuth();
+  const farmProfile = readFarmProfile();
 
-  const [form, setForm] = useState({
-    name: user?.username || "",
+  const [form, setForm] = useState(() => ({
+    name: farmProfile?.account?.firstName || user?.username || "",
     age: "",
     gender: "",
-    state: user?.location?.split(",")[0]?.trim() || "",
-    district: "",
-    landSize: "",
+    state: farmProfile?.farmLocation?.state || "",
+    district: farmProfile?.farmLocation?.district || "",
+    landSize: farmProfile?.farmLocation?.farmSize || "",
     landType: "",
-    currentCrops: "",
-    hasIrrigation: "",
-    waterSource: "",
+    currentCrops: getFarmCrop(farmProfile),
+    hasIrrigation: farmProfile?.farmLocation?.irrigationSource ? "Yes" : "",
+    waterSource: farmProfile?.farmLocation?.irrigationSource || "",
     annualIncome: "",
     farmerCategory: "",
     hasKCC: "",
     hasLivestock: "",
     needsHelp: [],
     hasExistingScheme: "",
-  });
+  }));
 
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);

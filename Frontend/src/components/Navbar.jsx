@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Sprout, Menu, X, LayoutDashboard, LogOut, User, Store, Landmark, LineChart, Droplets } from "lucide-react";
+import { Sprout, Menu, X, LayoutDashboard, LogOut, User, Store, Landmark, LineChart } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function Navbar() {
@@ -28,16 +28,15 @@ export default function Navbar() {
 
   const navLinks = [
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { to: "/features/market-intelligence", label: "Mandi Prices", icon: LineChart },
-    { to: "/features/schemes", label: "Government Schemes", icon: Landmark },
-    { to: "/features/irrigation", label: "Irrigation Advisor", icon: Droplets },
+    { to: "/features/market-intelligence", label: "Mandi", fullLabel: "Mandi Prices", icon: LineChart },
+    { to: "/features/schemes", label: "Schemes", fullLabel: "Government Schemes", icon: Landmark },
     { to: "/marketplace", label: "Marketplace", icon: Store },
   ];
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-[#FAF9F5]/95 dark:bg-[#0b1410]/95 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800 transition-colors">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-16 sm:h-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex items-center justify-between h-16">
 
           {/* Brand Logo */}
           <Link
@@ -59,7 +58,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Navigation Links */}
-          {!isLanding && <nav className="hidden md:flex items-center gap-1.5" aria-label="Main Navigation">
+          {!isLanding && <nav className="hidden lg:flex items-center gap-1" aria-label="Main Navigation">
             {navLinks.map((link) => {
               const isActive = location.pathname === link.to;
               const Icon = link.icon;
@@ -67,7 +66,9 @@ export default function Navbar() {
                 <Link
                   key={link.to}
                   to={link.to}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                  aria-label={link.fullLabel || link.label}
+                  title={link.fullLabel || link.label}
+                  className={`flex items-center gap-1.5 whitespace-nowrap px-3 py-2 rounded-xl text-[13px] font-semibold transition-colors ${
                     isActive
                       ? "text-emerald-900 dark:text-emerald-200 bg-emerald-100/70 dark:bg-emerald-950/60"
                       : "text-stone-700 dark:text-stone-300 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-stone-100/70 dark:hover:bg-stone-800/50"
@@ -124,7 +125,7 @@ export default function Navbar() {
             {!isLanding && <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-xl text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-700"
+              className="lg:hidden p-2 rounded-xl text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-700"
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileMenuOpen}
             >
@@ -137,7 +138,7 @@ export default function Navbar() {
       {/* Mobile Drawer Overlay */}
       {!isLanding && mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs md:hidden"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs lg:hidden"
           onClick={() => setMobileMenuOpen(false)}
           aria-hidden="true"
         />
@@ -145,7 +146,7 @@ export default function Navbar() {
 
       {/* Mobile Navigation Drawer Panel */}
       {!isLanding && <div
-        className={`fixed top-0 right-0 bottom-0 w-[80%] max-w-xs z-50 bg-[#FAF9F5] dark:bg-[#0d1a14] border-l border-stone-200 dark:border-stone-800 shadow-xl flex flex-col transform transition-transform duration-200 ease-in-out md:hidden ${
+        className={`fixed top-0 right-0 bottom-0 w-[80%] max-w-xs z-50 bg-[#FAF9F5] dark:bg-[#0d1a14] border-l border-stone-200 dark:border-stone-800 shadow-xl flex flex-col transform transition-transform duration-200 ease-in-out lg:hidden ${
           mobileMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >

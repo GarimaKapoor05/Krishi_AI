@@ -36,20 +36,21 @@ export default function GradeReportCard({ report, imageUrl, compact = false }) {
   if (!report) return null;
 
   return (
-    <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl overflow-hidden">
-      <div className="flex flex-col sm:flex-row">
+    <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl overflow-hidden shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-stretch">
         {imageUrl && (
-          <div className="sm:w-56 shrink-0 bg-stone-100 dark:bg-stone-800">
+          <div className="sm:w-40 lg:w-44 shrink-0 bg-stone-100 dark:bg-stone-800">
             <img
               src={imageUrl}
               alt="Graded harvest"
-              className="w-full h-48 sm:h-full object-cover"
+              className="w-full h-48 sm:h-full sm:min-h-64 object-cover"
             />
           </div>
         )}
 
-        <div className="flex-1 p-4 sm:p-5 space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-0 flex-1 p-4 sm:p-5 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
             <GradeBadge
               grade={report.suggested_grade}
               confidence={report.confidence_score}
@@ -57,21 +58,23 @@ export default function GradeReportCard({ report, imageUrl, compact = false }) {
             <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">
               Confidence: {report.confidence_band}
             </span>
+            </div>
+            <span className="text-[10px] font-semibold text-stone-400">Photo quality estimate</span>
           </div>
 
           <div>
-            <p className="text-sm font-bold text-stone-900 dark:text-white">
+            <p className="text-sm sm:text-base leading-snug font-bold text-stone-900 dark:text-white">
               {report.quality_summary}
             </p>
             <p
-              className="text-sm text-stone-600 dark:text-stone-300 mt-1"
+              className="text-xs sm:text-sm leading-relaxed text-stone-600 dark:text-stone-300 mt-1"
               lang="hi"
             >
               {report.quality_summary_hi}
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
             {Object.entries(report.visual_inspection || {}).map(([k, v]) => (
               <InspectionPill key={k} label={INSPECTION_LABELS[k] || k} value={v} />
             ))}
@@ -79,7 +82,7 @@ export default function GradeReportCard({ report, imageUrl, compact = false }) {
 
           {!compact && (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 <div>
                   <p className="text-[11px] uppercase tracking-wide font-bold text-stone-400 mb-2 flex items-center gap-1.5">
                     <Sparkles size={13} className="text-emerald-600" />
@@ -117,7 +120,7 @@ export default function GradeReportCard({ report, imageUrl, compact = false }) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 <div className="rounded-xl bg-stone-50 dark:bg-stone-800/50 p-3">
                   <p className="text-[11px] uppercase tracking-wide font-bold text-stone-400 mb-1.5 flex items-center gap-1.5">
                     <Languages size={13} className="text-sky-600" />

@@ -31,9 +31,6 @@ sys.path.append(os.path.join(BASE_DIR, "market_price_prediction"))
 
 # ====================== IMPORTS ======================
 
-import joblib
-import numpy as np
-
 from predict_crop import predict_crop
 from predict_fertilizer import (
     predict_fertilizer,
@@ -60,6 +57,9 @@ app.config["MAX_CONTENT_LENGTH"] = 12 * 1024 * 1024  # image uploads headroom
 
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
     "https://krishi-ai-sepia.vercel.app"
 ]
 
@@ -109,24 +109,7 @@ with app.app_context():
             db.session.rollback()
         print(f"⚠️ Database migration note: {e}")
 
-# ====================== LOAD MODELS ======================
-
-irrigation_model = None
-
-try:
-    model_path = os.path.join(
-        BASE_DIR,
-        "irrigation_advisor",
-        "model",
-        "irrigation_model.joblib"
-    )
-
-    if os.path.exists(model_path):
-        irrigation_model = joblib.load(model_path)
-        print("✅ Irrigation Model Loaded!")
-
-except Exception as e:
-    print(f"⚠️ Irrigation model error: {e}")
+from scheduler import calculate_schedule
 
 # ====================== CROP RECOMMENDATION ======================
 
@@ -213,84 +196,13 @@ def fertilizer_dosage_route():
 
 @app.route("/irrigation/predict", methods=["POST"])
 def predict_irrigation():
-
     try:
-
-        data = request.get_json(force=True)
-
-        moisture = float(data.get("moisture", 40))
-        humidity = float(data.get("humidity", 50))
-        temp = float(data.get("temp", 28))
-        et = float(data.get("et", 4.5))
-        crop = data.get("crop", "general").lower()
-
-        if irrigation_model:
-
-            features = np.array([
-                [moisture, humidity, temp, et]
-            ])
-
-            prediction = irrigation_model.predict(features)[0]
-
-        else:
-
-            prediction = (
-                1
-                if moisture < 40 or (temp > 30 and humidity < 55)
-                else 0
-            )
-
-        water_need_mm = max(
-            0,
-            int((60 - moisture) * 1.5)
-        )
-
-        drip_water_need = round(
-            water_need_mm / 0.90,
-            1
-        )
-
-        advice_db = {
-            "rice": "Maintain shallow water layer during vegetative stage",
-            "maize": "Critical at tasseling stage",
-            "cotton": "Drip at root zone is best"
-        }
-
-        crop_info = advice_db.get(
-            crop,
-            "Monitor soil closely"
-        )
-
-        recommendation = (
-            "Irrigate Now - Drip Recommended"
-            if prediction == 1
-            else "No Irrigation Needed"
-        )
-        #FIX 4 : Urgency “Low” when no irrigation needed:
-        if prediction == 0:
-            urgency = "Low"
-        elif moisture < 25:
-            urgency = "High"
-        else:
-            urgency = "Medium"
-        #FIX 5: Water amount shown even when not needed
-        return jsonify({
-            "recommendation": recommendation,
-            "water_amount_mm": drip_water_need if prediction == 1 else 0,
-            "urgency": urgency,
-            "advice": f"{crop_info}. Use drip irrigation for best efficiency.",
-            "insights": [
-                "Early morning irrigation recommended",
-                "Check drip lines regularly"
-            ],
-            "practical_tips": [
-                "Mulch soil to retain moisture",
-                "Monitor weather forecast"
-            ],
-            "moisture": round(moisture, 1),
-            "status": "success"
-        })
-
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({"error": "Send crop and field details as a JSON object."}), 400
+        return jsonify(calculate_schedule(data))
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 

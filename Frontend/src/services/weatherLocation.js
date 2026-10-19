@@ -15,6 +15,21 @@ const canonicalLocation = (value = "") => {
 };
 
 async function resolveFarmCoordinates(location) {
+  const hasPinnedCoordinates = location?.latitude !== null && location?.latitude !== undefined && location?.latitude !== ""
+    && location?.longitude !== null && location?.longitude !== undefined && location?.longitude !== "";
+  const latitude = hasPinnedCoordinates ? Number(location.latitude) : Number.NaN;
+  const longitude = hasPinnedCoordinates ? Number(location.longitude) : Number.NaN;
+  if (Number.isFinite(latitude) && latitude >= -90 && latitude <= 90
+    && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180) {
+    return {
+      latitude,
+      longitude,
+      name: location.village || location.district || "Pinned farm",
+      admin1: location.state || "India",
+      country_code: "IN",
+      isFarmPin: true,
+    };
+  }
   if (!location?.district || !location?.state) {
     throw new Error("Add your district and state in your farm profile to get local weather.");
   }
@@ -50,12 +65,14 @@ async function resolveFarmCoordinates(location) {
 export async function getFarmWeather(location) {
   const match = await resolveFarmCoordinates(location);
 
-  const locationName = [match.name, match.admin1].filter(Boolean).join(", ");
+  const locationName = match.isFarmPin
+    ? [location.village, location.district, location.state].filter(Boolean).join(", ") || "Pinned farm location"
+    : [match.name, match.admin1].filter(Boolean).join(", ");
   try {
     const weatherResponse = await marketIntelWeather({ lat: match.latitude, lon: match.longitude });
     const data = weatherResponse.data;
     const hasCompleteForecast = Array.isArray(data?.days) && data.days.filter(hasClimateValues).length >= 5;
-    if (hasCompleteForecast) return { ...data, locationName };
+    if (hasCompleteForecast && data?.current?.temperature_2m != null) return { ...data, locationName };
   } catch {
     // Older or temporarily unavailable backend weather routes are recovered below.
   }
@@ -65,7 +82,8 @@ export async function getFarmWeather(location) {
   const forecastParams = new URLSearchParams({
     latitude: String(match.latitude),
     longitude: String(match.longitude),
-    daily: "temperature_2m_max,temperature_2m_min,precipitation_sum",
+    current: "temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code",
+    daily: "temperature_2m_max,temperature_2m_min,precipitation_sum,et0_fao_evapotranspiration",
     hourly: "relative_humidity_2m",
     timezone: "Asia/Kolkata",
     forecast_days: "7",
@@ -97,6 +115,7 @@ export async function getFarmWeather(location) {
       temp_max_c: forecast.daily?.temperature_2m_max?.[index] ?? null,
       temp_min_c: forecast.daily?.temperature_2m_min?.[index] ?? null,
       rainfall_mm: forecast.daily?.precipitation_sum?.[index] ?? null,
+      et0_mm: forecast.daily?.et0_fao_evapotranspiration?.[index] ?? null,
       humidity_percent: humidity.length ? Math.round(humidity.reduce((sum, value) => sum + value, 0) / humidity.length * 10) / 10 : null,
     };
   });
@@ -106,6 +125,7 @@ export async function getFarmWeather(location) {
   return {
     latitude: match.latitude,
     longitude: match.longitude,
+    current: forecast.current || null,
     days,
     locationName,
     meta: { source: "Open-Meteo", is_live: true, fetched_at: new Date().toISOString() },

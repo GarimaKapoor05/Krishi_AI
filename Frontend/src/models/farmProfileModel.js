@@ -27,6 +27,9 @@ export const createDefaultFarmProfile = () => ({
     district: "",
     state: "",
     pincode: "",
+    latitude: null,
+    longitude: null,
+    locationAccuracyMeters: null,
     farmSize: "",
     measurementUnit: "acres", // 'acres' | 'hectares'
     soilType: "", // from SOIL_TYPES id or 'unknown'

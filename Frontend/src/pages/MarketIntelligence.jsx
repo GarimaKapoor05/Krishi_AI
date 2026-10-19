@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { getFarmCrop, readFarmProfile } from "../services/farmProfile";
 import {
   TrendingUp,
   TrendingDown,
@@ -107,11 +108,18 @@ export default function MarketIntelligence() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
 
+  const farmProfile = readFarmProfile();
+  const preferredCrop = getFarmCrop(farmProfile);
+  const preferredMarket = farmProfile?.farmLocation?.district || "";
+
   useEffect(() => {
     marketIntelCatalog("Wheat")
       .then(({ data }) => {
         setCatalog(data.commodities || []);
-        setMarket((data.markets && data.markets[0]) || "bhopal");
+        const cropMatch = data.commodities?.find((item) => item.toLowerCase() === preferredCrop.toLowerCase());
+        if (cropMatch) setCommodity(cropMatch);
+        const districtMatch = data.markets?.find((item) => item.toLowerCase() === preferredMarket.toLowerCase());
+        setMarket(districtMatch || (data.markets && data.markets[0]) || "bhopal");
       })
       .catch(() => setCatalog([]));
   }, []);
@@ -120,9 +128,11 @@ export default function MarketIntelligence() {
     if (!commodity) return;
     marketIntelCatalog(commodity)
       .then(({ data }) => {
+        setCatalog(data.commodities || []);
         const markets = data.markets || [];
         if (markets.length && !markets.some((m) => m.toLowerCase() === market.toLowerCase())) {
-          setMarket(markets[0]);
+          const districtMatch = markets.find((item) => item.toLowerCase() === preferredMarket.toLowerCase());
+          setMarket(districtMatch || markets[0]);
         }
       })
       .catch(() => {});

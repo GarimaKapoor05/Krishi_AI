@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   AlertCircle,
@@ -180,6 +181,9 @@ export default function BuyerDashboard() {
             <AlertCircle size={15} className="text-amber-600" />
             Grades are AI visual estimates, not lab certificates
           </div>
+          <Link to="/seller-dashboard" className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-900">
+            <Sprout size={15} /> Sell your harvest
+          </Link>
         </motion.div>
 
         {/* Stats */}

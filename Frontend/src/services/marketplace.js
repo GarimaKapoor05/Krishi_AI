@@ -57,9 +57,13 @@ export const sentInquiries = () => api.get("/api/inquiries/sent");
 export const marketplaceStats = () => api.get("/api/marketplace/stats");
 
 export function apiError(err, fallback = "Something went wrong. Please try again.") {
+  if (err?.response?.status === 401) {
+    return "Your login session is no longer valid. Sign in again to load seller listings and inquiries.";
+  }
   return (
     err?.response?.data?.error ||
     err?.response?.data?.message ||
+    err?.response?.data?.msg ||
     err?.message ||
     fallback
   );

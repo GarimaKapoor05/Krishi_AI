@@ -676,7 +676,7 @@ def fetch_weather(lat: float | None = None, lon: float | None = None,
     if lat is None or lon is None:
         lat, lon = MARKET_COORDS["bhopal"]
 
-    cache_key = f"weather:v2|{round(lat,2)}|{round(lon,2)}|{forecast_days}"
+    cache_key = f"weather:v3|{round(lat,2)}|{round(lon,2)}|{forecast_days}"
     cached = _cache.get(cache_key)
     if cached is not None:
         return cached
@@ -684,7 +684,8 @@ def fetch_weather(lat: float | None = None, lon: float | None = None,
     params = {
         "latitude": lat,
         "longitude": lon,
-        "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum",
+        "current": "temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code",
+        "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,et0_fao_evapotranspiration",
         "hourly": "relative_humidity_2m",
         "timezone": "Asia/Kolkata",
         "forecast_days": max(1, min(16, forecast_days)),
@@ -711,12 +712,14 @@ def fetch_weather(lat: float | None = None, lon: float | None = None,
             "temp_max_c": _safe_index(daily.get("temperature_2m_max"), i),
             "temp_min_c": _safe_index(daily.get("temperature_2m_min"), i),
             "rainfall_mm": _safe_index(daily.get("precipitation_sum"), i),
+            "et0_mm": _safe_index(daily.get("et0_fao_evapotranspiration"), i),
             "humidity_percent": round(sum(humidity_by_date[date]) / len(humidity_by_date[date]), 1)
             if humidity_by_date.get(date) else None,
         })
     result = {
         "latitude": lat,
         "longitude": lon,
+        "current": payload.get("current"),
         "days": days,
         "meta": {
             "source": "Open-Meteo",

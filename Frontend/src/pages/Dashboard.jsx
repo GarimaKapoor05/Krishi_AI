@@ -2,12 +2,10 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import {
-  Calendar,
   CloudRain,
   Sprout,
   CheckCircle2,
   AlertCircle,
-  Clock,
   MapPin,
   Droplets,
   LineChart,
@@ -19,45 +17,16 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { getFarmWeather } from "../services/weatherLocation";
+import { buildCropCalendar, calendarDateKey, parseCalendarDate } from "../services/cropCalendar";
+import CropCalendar from "../components/CropCalendar";
 
 const PROFILE_KEY = "krishi_farm_profile_v2";
 
-// Indicative lifecycle checkpoints, not agronomic prescriptions. Actual timing
-// varies by variety, region, weather and cultivation method.
-const CROP_CYCLES = {
-  wheat: [0, 20, 45, 75, 110, 135], rice: [0, 20, 45, 75, 105, 135], paddy: [0, 20, 45, 75, 105, 135], "rice / paddy": [0, 20, 45, 75, 105, 135],
-  "maize (corn)": [0, 15, 35, 55, 85, 110], maize: [0, 15, 35, 55, 85, 110],
-  cotton: [0, 20, 50, 80, 120, 160], soybean: [0, 15, 35, 55, 85, 110],
-  "mustard / rapeseed": [0, 15, 35, 55, 85, 115], "mustard/rapeseed": [0, 15, 35, 55, 85, 115], rapeseed: [0, 15, 35, 55, 85, 115], mustard: [0, 15, 35, 55, 85, 115],
-  potato: [0, 15, 35, 55, 80, 105], tomato: [0, 20, 40, 60, 90, 120], onion: [0, 20, 45, 70, 100, 120],
-  sugarcane: [0, 30, 90, 180, 270, 330], chickpea: [0, 15, 35, 55, 80, 105],
-  chili: [0, 20, 45, 70, 100, 140], chilli: [0, 20, 45, 70, 100, 140], "groundnut": [0, 15, 35, 55, 80, 110], bajra: [0, 15, 30, 50, 75, 95],
+const formatDate = (value) => {
+  const date = typeof value === "string" ? parseCalendarDate(value) : value;
+  return date?.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) || "Not set";
 };
-const CROP_PHASES = ["Sowing / planting", "Establishment", "Vegetative growth", "Flowering", "Grain / fruit development", "Indicative harvest window"];
-const formatDate = (date) => date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-
-function makeCropCalendar({ profile, cropName, isCultivating, rawSowingDate, plannedPeriod }) {
-  if (!cropName) return [];
-  const value = isCultivating ? rawSowingDate : plannedPeriod;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) return [];
-  const start = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(start.getTime())) return [];
-  const key = cropName.trim().toLowerCase();
-  const offsets = CROP_CYCLES[key];
-  if (!offsets) return [{ date: start, day: 0, elapsed: 0, phase: "Sowing / planting", status: start < new Date(new Date().setHours(0,0,0,0)) ? "past" : "next" }];
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const daysFromStart = Math.max(0, Math.floor((today - start) / 86400000));
-  const checkpoints = offsets.map((day, index) => {
-    const date = new Date(start); date.setDate(date.getDate() + day);
-    return { date, phase: CROP_PHASES[index], day };
-  });
-  const current = checkpoints.reduce((found, item, index) => item.date <= today ? index : found, -1);
-  return checkpoints.map((item, index) => ({
-    ...item,
-    status: index <= current ? "past" : index === current + 1 ? "next" : "upcoming",
-    elapsed: daysFromStart,
-  }));
-}
+const displayValue = (value) => value ? value.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) : "Not provided";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -136,18 +105,19 @@ export default function Dashboard() {
   const isPlanning = profile?.farmingStatus === "planning";
 
   const cropName = isCultivating
-    ? profile?.activeFarming?.cropName || "Current Crop"
+    ? profile?.activeFarming?.cropName || null
     : isPlanning
-    ? profile?.planningFarming?.primaryCrop || profile?.planningFarming?.interestedCrops?.[0] || profile?.planningFarming?.cropRecommendation?.recommended_crop || "Planned Crop"
+    ? profile?.planningFarming?.primaryCrop || profile?.planningFarming?.interestedCrops?.[0] || profile?.planningFarming?.cropRecommendation?.recommended_crop || null
     : null;
 
   const rawSowingDate = profile?.activeFarming?.sowingDate;
   const plannedPeriod = profile?.planningFarming?.plannedSowingPeriod;
-  const calendarTasks = makeCropCalendar({ profile, cropName, isCultivating, rawSowingDate, plannedPeriod });
-  const nextMilestone = calendarTasks.find((task) => task.status === "next");
-  const elapsedDays = calendarTasks[0]?.elapsed ?? 0;
-  const cycleDays = calendarTasks.at(-1)?.day || 1;
-  const cropProgress = isCultivating ? Math.min(100, Math.round((elapsedDays / cycleDays) * 100)) : 0;
+  const cropCalendar = buildCropCalendar({ cropName, isCultivating, sowingDate: rawSowingDate, plannedDate: plannedPeriod });
+  const todayKey = calendarDateKey(new Date());
+  const nextMilestone = cropCalendar.events.find((event) => event.date >= todayKey);
+  const nextMilestoneDate = nextMilestone ? parseCalendarDate(nextMilestone.date) : null;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const daysToNext = nextMilestoneDate ? Math.max(0, Math.ceil((nextMilestoneDate - today) / 86400000)) : null;
 
   // Determine practical next action
   const nextAction = (() => {
@@ -160,8 +130,8 @@ export default function Dashboard() {
       };
     }
     return {
-      title: nextMilestone ? `${nextMilestone.phase} · ${formatDate(nextMilestone.date)}` : calendarTasks.length ? "Indicative crop cycle complete" : "Add a crop and sowing date",
-      text: nextMilestone ? `Estimated ${Math.max(0, Math.round((nextMilestone.date - new Date()) / 86400000))} days to your next crop stage.` : "Set your crop and sowing date to see a crop-stage timeline.",
+      title: nextMilestone ? `${nextMilestone.title} · ${formatDate(nextMilestone.date)}` : cropCalendar.events.length ? "Current crop cycle complete" : "Add a crop and planting date",
+      text: nextMilestone ? `${daysToNext === 0 ? "Due today" : `In ${daysToNext} day${daysToNext === 1 ? "" : "s"}`} · ${nextMilestone.description}` : "Add your crop and planting date to build a date-based field calendar.",
       link: null,
       btnLabel: null,
     };
@@ -255,7 +225,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-2">
                 <Sprout className="h-5 w-5 text-emerald-700" />
                 <h3 className="font-extrabold text-base sm:text-lg text-stone-900 dark:text-white">
-                  Current Crop Plan
+                  Your Crop Plan
                 </h3>
               </div>
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
@@ -273,24 +243,24 @@ export default function Dashboard() {
 
               <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/50">
                 <span className="text-[11px] font-semibold text-stone-500 uppercase block">
-                  {isCultivating ? "Sowing Date" : "Planned Period"}
+                  {isCultivating ? "Planting Date" : "Planned Period"}
                 </span>
                 <span className="font-bold text-sm sm:text-base text-stone-900 dark:text-white block mt-0.5">
-                  {isCultivating ? rawSowingDate || "Recorded" : plannedPeriod || "Upcoming"}
+                  {isCultivating ? rawSowingDate ? formatDate(rawSowingDate) : "Recorded" : plannedPeriod ? formatDate(plannedPeriod) : "Upcoming"}
                 </span>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/50">
-                <span className="text-[11px] font-semibold text-stone-500 uppercase block">Irrigation Source</span>
+                <span className="text-[11px] font-semibold text-stone-500 uppercase block">How You Water</span>
                 <span className="font-bold text-sm sm:text-base text-stone-900 dark:text-white block mt-0.5 capitalize">
-                  {profile.farmLocation?.irrigationSource || "Not provided"}
+                  {displayValue(profile.farmLocation?.irrigationSource)}
                 </span>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/50">
                 <span className="text-[11px] font-semibold text-stone-500 uppercase block">Water Status</span>
                 <span className="font-bold text-sm sm:text-base text-stone-900 dark:text-white block mt-0.5 capitalize">
-                  {profile.farmLocation?.waterAvailability || "Not provided"}
+                  {displayValue(profile.farmLocation?.waterAvailability)}
                 </span>
               </div>
             </div>
@@ -312,54 +282,15 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ── Crop Calendar & Milestone Tasks ── */}
-        <motion.div initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }} whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.35 }} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-5 sm:p-6 shadow-sm space-y-5">
-          <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-emerald-700" />
-              <h3 className="font-extrabold text-base sm:text-lg text-stone-900 dark:text-white">
-                {cropName ? `${cropName} crop calendar` : "Crop calendar"}
-              </h3>
-            </div>
-            <span className="text-xs text-stone-500">
-              Estimated growth stages
-            </span>
-          </div>
-
-          {isCultivating && calendarTasks.length > 1 && <div className="rounded-xl bg-stone-50 dark:bg-stone-800/40 p-4">
-            <div className="flex justify-between text-xs"><span className="font-semibold capitalize">{cropName}</span><span className="text-stone-500">Day {elapsedDays} · ~{cycleDays} day cycle</span></div>
-            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700"><motion.div initial={prefersReducedMotion ? false : { width: 0 }} whileInView={prefersReducedMotion ? undefined : { width: `${cropProgress}%` }} viewport={{ once: true }} transition={{ duration: 0.7, ease: "easeOut" }} className="h-full rounded-full bg-emerald-700" /></div>
-          </div>}
-          {calendarTasks.length === 0 ? <div className="rounded-xl border border-dashed border-stone-300 p-6 text-center dark:border-stone-700"><Calendar className="mx-auto mb-2 h-5 w-5 text-emerald-700"/><p className="text-sm font-semibold">Add a crop and sowing date</p><p className="mt-1 text-xs text-stone-500">Your timeline will be calculated from the date in your farm profile.</p><Link to="/onboarding?edit=1" className="mt-3 inline-flex text-xs font-semibold text-emerald-800 hover:underline">Update crop plan <ArrowRight size={13} className="ml-1"/></Link></div> : <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {calendarTasks.map((task, i) => (
-              <div key={i} className={`relative overflow-hidden rounded-xl border p-3 transition-colors ${task.status === "next" ? "border-emerald-300 bg-emerald-50/70 dark:border-emerald-800 dark:bg-emerald-950/20" : "border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900"}`}>
-                <div className="mt-1">
-                  {task.status === "past" ? (
-                    <CheckCircle2 size={18} className="text-emerald-700 shrink-0" />
-                  ) : task.status === "next" ? (
-                    <Clock size={18} className="text-amber-600 shrink-0 animate-pulse" />
-                  ) : (
-                    <div className="w-4 h-4 rounded-full border-2 border-stone-300 dark:border-stone-600 shrink-0" />
-                  )}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                    <h4 className="font-bold text-sm sm:text-base text-stone-900 dark:text-white">
-                      {task.phase}
-                    </h4>
-                    <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 whitespace-nowrap">
-                      {formatDate(task.date)}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-1 leading-relaxed">
-                    {isCultivating ? `Day ${task.day} after sowing` : `Target · Day ${task.day}`}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>}
-          <p className="text-[10px] text-stone-500">Indicative timeline only. Crop duration varies by variety, location, and conditions; confirm local timing with an agricultural extension officer.</p>
+        {/* ── Interactive crop calendar and field agenda ── */}
+        <motion.div initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }} whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.35 }}>
+          <CropCalendar
+            key={`${cropName || "no-crop"}-${rawSowingDate || plannedPeriod || "no-date"}`}
+            cropName={cropName}
+            isCultivating={isCultivating}
+            sowingDate={rawSowingDate}
+            plannedDate={plannedPeriod}
+          />
         </motion.div>
 
         {/* ── Seven-Day Weather Section (Open-Meteo Integration) ── */}
@@ -368,13 +299,29 @@ export default function Dashboard() {
             <div className="flex items-center gap-2">
               <CloudRain className="h-5 w-5 text-sky-700" />
               <h3 className="font-extrabold text-base sm:text-lg text-stone-900 dark:text-white">
-                7-Day Local Weather Forecast
+                Local weather
               </h3>
             </div>
             <span className="text-xs font-semibold text-stone-500">
               {weatherState.data?.locationName || districtName}
             </span>
           </div>
+
+          {weatherState.data?.current && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-sky-50/80 px-4 py-3 dark:bg-sky-950/25">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-800 dark:text-sky-300">Current conditions</p>
+                <p className="mt-0.5 text-xs text-stone-600 dark:text-stone-300">
+                  {weatherState.data.current.apparent_temperature != null && `Feels like ${Math.round(weatherState.data.current.apparent_temperature)}°C`}
+                  {weatherState.data.current.relative_humidity_2m != null && ` · ${Math.round(weatherState.data.current.relative_humidity_2m)}% humidity`}
+                  {weatherState.data.current.precipitation != null && ` · ${weatherState.data.current.precipitation} mm rain`}
+                </p>
+              </div>
+              <p className="text-2xl font-semibold tracking-tight text-stone-900 dark:text-white" aria-label={`Current temperature ${Math.round(weatherState.data.current.temperature_2m)} degrees Celsius`}>
+                {Math.round(weatherState.data.current.temperature_2m)}°<span className="text-sm font-medium">C now</span>
+              </p>
+            </div>
+          )}
 
           {weatherState.loading && (
             <div className="py-10 text-center text-stone-500 flex items-center justify-center gap-2">
@@ -428,6 +375,7 @@ export default function Dashboard() {
                       </span>
 
                       <div className="my-1">
+                        <span className="text-[10px] font-medium text-stone-500 dark:text-stone-400 block">High</span>
                         <span className="font-extrabold text-base text-stone-900 dark:text-white block">
                           {day.temp_max_c != null ? `${Math.round(day.temp_max_c)}°C` : "—"}
                         </span>
@@ -449,83 +397,89 @@ export default function Dashboard() {
               </div>
 
               <p className="text-[11px] text-stone-400 dark:text-stone-500 mt-3 text-right">
-                7-day forecast provided by Open-Meteo; conditions can change.
+                Forecasts can change; check local advisories before field decisions.
               </p>
             </div>
           )}
         </motion.div>
 
-        {/* ── Working Features Jump Cards ── */}
-        <div>
-          <h3 className="font-extrabold text-base sm:text-lg text-stone-900 dark:text-white mb-4">
-            Preserved Working Tools
-          </h3>
+        {/* ── Farm tools ── */}
+        <section aria-labelledby="farm-tools-title">
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <div>
+              <h3 id="farm-tools-title" className="text-base font-semibold tracking-tight text-stone-900 dark:text-white">Farm tools</h3>
+              <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">Useful services, together in one place.</p>
+            </div>
+          </div>
 
-          <div className="grid sm:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
             <Link
               to="/features/market-intelligence"
-              className="bg-white dark:bg-stone-900 p-5 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-xs hover:border-emerald-600 transition-colors group flex flex-col justify-between"
+              className="group flex min-h-32 flex-col justify-between rounded-xl border border-stone-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-emerald-500 dark:border-stone-800 dark:bg-stone-900"
             >
               <div>
-                <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 flex items-center justify-center mb-3">
-                  <LineChart size={20} />
+                <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-teal-50 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300">
+                  <LineChart size={16} />
                 </div>
-                <h4 className="font-bold text-base text-stone-900 dark:text-white group-hover:text-emerald-700 transition-colors">
-                  Live Mandi Prices
+                <h4 className="text-sm font-semibold text-stone-900 transition-colors group-hover:text-emerald-700 dark:text-white">
+                  Mandi prices
                 </h4>
-                <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed">
-                  Daily AGMARKNET prices, arrivals, and price forecasts for nearby mandis.
+                <p className="mt-1 text-[11px] leading-relaxed text-stone-500 dark:text-stone-400">
+                  Compare nearby markets and recent crop prices.
                 </p>
               </div>
-              <div className="mt-4 pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-xs font-bold text-emerald-800 dark:text-emerald-300">
-                <span>View prices</span>
-                <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
-              </div>
+              <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">Open tool <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" /></span>
             </Link>
 
             <Link
               to="/features/schemes"
-              className="bg-white dark:bg-stone-900 p-5 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-xs hover:border-emerald-600 transition-colors group flex flex-col justify-between"
+              className="group flex min-h-32 flex-col justify-between rounded-xl border border-stone-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-emerald-500 dark:border-stone-800 dark:bg-stone-900"
             >
               <div>
-                <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 flex items-center justify-center mb-3">
-                  <Landmark size={20} />
+                <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-purple-50 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300">
+                  <Landmark size={16} />
                 </div>
-                <h4 className="font-bold text-base text-stone-900 dark:text-white group-hover:text-emerald-700 transition-colors">
-                  Government Schemes
+                <h4 className="text-sm font-semibold text-stone-900 transition-colors group-hover:text-emerald-700 dark:text-white">
+                  Government schemes
                 </h4>
-                <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed">
-                  Direct eligibility matcher for PM-KISAN, PMFBY crop insurance, and KCC credit.
+                <p className="mt-1 text-[11px] leading-relaxed text-stone-500 dark:text-stone-400">
+                  Explore support programmes and eligibility details.
                 </p>
               </div>
-              <div className="mt-4 pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-xs font-bold text-emerald-800 dark:text-emerald-300">
-                <span>Check eligibility</span>
-                <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
-              </div>
+              <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">Open tool <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" /></span>
             </Link>
 
             <Link
               to="/marketplace"
-              className="bg-white dark:bg-stone-900 p-5 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-xs hover:border-emerald-600 transition-colors group flex flex-col justify-between"
+              className="group flex min-h-32 flex-col justify-between rounded-xl border border-stone-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-emerald-500 dark:border-stone-800 dark:bg-stone-900"
             >
               <div>
-                <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 flex items-center justify-center mb-3">
-                  <Store size={20} />
+                <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                  <Store size={16} />
                 </div>
-                <h4 className="font-bold text-base text-stone-900 dark:text-white group-hover:text-emerald-700 transition-colors">
-                  Farmer Marketplace
+                <h4 className="text-sm font-semibold text-stone-900 transition-colors group-hover:text-emerald-700 dark:text-white">
+                  Farmer marketplace
                 </h4>
-                <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed">
-                  Browse crop listings from fellow farmers or list your own harvest with quality grading.
+                <p className="mt-1 text-[11px] leading-relaxed text-stone-500 dark:text-stone-400">
+                  Browse harvest listings or offer your own produce.
                 </p>
               </div>
-              <div className="mt-4 pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-xs font-bold text-emerald-800 dark:text-emerald-300">
-                <span>Open marketplace</span>
-                <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
+              <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">Open tool <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" /></span>
+            </Link>
+
+            <Link
+              to="/features/irrigation"
+              className="group flex min-h-32 flex-col justify-between rounded-xl border border-stone-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-emerald-500 dark:border-stone-800 dark:bg-stone-900"
+            >
+              <div>
+                <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300"><Droplets size={16} /></div>
+                <h4 className="text-sm font-semibold text-stone-900 transition-colors group-hover:text-emerald-700 dark:text-white">Irrigation advisor</h4>
+                <p className="mt-1 text-[11px] leading-relaxed text-stone-500 dark:text-stone-400">Review field moisture and weather inputs for a watering check.</p>
               </div>
+              <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">Open tool <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" /></span>
             </Link>
           </div>
-        </div>
+        </section>
 
       </motion.div>
     </div>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   MapPin,
   ArrowRight,
@@ -26,6 +26,32 @@ export function Step2FarmProfile({
   backLabel = "Back to Account",
   errors = {}
 }) {
+  const [locationStatus, setLocationStatus] = useState("");
+  const [locating, setLocating] = useState(false);
+
+  const captureFarmLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationStatus("Location is not supported by this browser. Enter your farm address manually.");
+      return;
+    }
+    setLocating(true);
+    setLocationStatus("Waiting for location permission…");
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        onChange({ latitude: coords.latitude, longitude: coords.longitude, locationAccuracyMeters: Math.round(coords.accuracy) });
+        setLocationStatus(`Farm coordinates saved with approximately ${Math.round(coords.accuracy)} m accuracy.`);
+        setLocating(false);
+      },
+      (error) => {
+        setLocationStatus(error.code === error.PERMISSION_DENIED
+          ? "Location permission was denied. You can still enter your farm address manually."
+          : "Could not get a precise location. Try again outdoors or enter your address manually.");
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 }
+    );
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onNext();
@@ -57,6 +83,20 @@ export function Step2FarmProfile({
             </h2>
           </div>
 
+          <div className="mb-4 rounded-xl border border-brand-border bg-white p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-stone-800">Pin your farm location</p>
+                <p className="mt-0.5 text-xs text-stone-500">With your permission, precise coordinates improve local weather. Your browser asks before sharing.</p>
+              </div>
+              <button type="button" onClick={captureFarmLocation} disabled={locating} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-brand-green px-3 py-2 text-xs font-semibold text-brand-green hover:bg-brand-mint/30 disabled:opacity-60">
+                <MapPin className="h-4 w-4" />{locating ? "Finding location…" : farmLocation.latitude != null ? "Refresh farm location" : "Use my farm location"}
+              </button>
+            </div>
+            {locationStatus && <p className="mt-2 text-xs text-stone-600" role="status">{locationStatus}</p>}
+            {farmLocation.latitude != null && <p className="mt-1 text-[11px] text-emerald-800">Coordinates saved · ±{farmLocation.locationAccuracyMeters ?? "—"} m reported accuracy</p>}
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Village / Town */}
             <div className="sm:col-span-2">
@@ -86,7 +126,7 @@ export function Step2FarmProfile({
               </label>
               <select
                 value={farmLocation.state}
-                onChange={(e) => onChange({ state: e.target.value })}
+                onChange={(e) => onChange({ state: e.target.value, latitude: null, longitude: null, locationAccuracyMeters: null })}
                 className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-all outline-none bg-white ${
                   errors.state
                     ? "border-red-400 bg-red-50/30 focus:border-red-500 focus:ring-2 focus:ring-red-100"
@@ -113,7 +153,7 @@ export function Step2FarmProfile({
               <input
                 type="text"
                 value={farmLocation.district}
-                onChange={(e) => onChange({ district: e.target.value })}
+                onChange={(e) => onChange({ district: e.target.value, latitude: null, longitude: null, locationAccuracyMeters: null })}
                 placeholder="e.g. Ludhiana or Nashik"
                 className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-all outline-none ${
                   errors.district
