@@ -17,10 +17,24 @@ i18n
       ur: { translation: ur },
       ta: { translation: ta }
     },
+    supportedLngs: ['en', 'hi', 'ta', 'ur'],
     fallbackLng: 'en',
+    detection: {
+      order: ['localStorage', 'navigator'],
+      caches: ['localStorage']
+    },
     interpolation: {
       escapeValue: false
     }
   });
+
+const applyDocumentLanguage = (language) => {
+  const baseLanguage = language?.split('-')[0] || 'en';
+  document.documentElement.lang = baseLanguage;
+  document.documentElement.dir = baseLanguage === 'ur' ? 'rtl' : 'ltr';
+};
+
+applyDocumentLanguage(i18n.resolvedLanguage);
+i18n.on('languageChanged', applyDocumentLanguage);
 
 export default i18n;

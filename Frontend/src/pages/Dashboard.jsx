@@ -19,16 +19,19 @@ import { useAuth } from "../context/AuthContext";
 import { getFarmWeather } from "../services/weatherLocation";
 import { buildCropCalendar, calendarDateKey, parseCalendarDate } from "../services/cropCalendar";
 import CropCalendar from "../components/CropCalendar";
+import { useTranslation } from "react-i18next";
 
 const PROFILE_KEY = "krishi_farm_profile_v2";
 
-const formatDate = (value) => {
+const formatDate = (value, locale = "en-IN") => {
   const date = typeof value === "string" ? parseCalendarDate(value) : value;
-  return date?.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) || "Not set";
+  return date?.toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" }) || "Not set";
 };
 const displayValue = (value) => value ? value.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) : "Not provided";
 
 export default function Dashboard() {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage || "en-IN";
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
   const [weatherState, setWeatherState] = useState({
@@ -92,7 +95,7 @@ export default function Dashboard() {
   const farmerName =
     profile?.account?.firstName
       ? `${profile.account.firstName} ${profile.account.lastName || ""}`.trim()
-      : user?.username || user?.name || "Farmer";
+      : user?.username || user?.name || t("farmerDashboard.farmer");
 
   // Location display
   const locationText =
@@ -123,15 +126,15 @@ export default function Dashboard() {
   const nextAction = (() => {
     if (!profile) {
       return {
-        title: "Complete your farm profile",
-        text: "Add your land size and active crop in onboarding to generate your personal crop calendar and next tasks.",
+        title: t("farmerDashboard.completeProfile"),
+        text: t("farmerDashboard.completeProfileText"),
         link: "/onboarding",
-        btnLabel: "Set up farm plan",
+        btnLabel: t("farmerDashboard.setupPlan"),
       };
     }
     return {
-      title: nextMilestone ? `${nextMilestone.title} · ${formatDate(nextMilestone.date)}` : cropCalendar.events.length ? "Current crop cycle complete" : "Add a crop and planting date",
-      text: nextMilestone ? `${daysToNext === 0 ? "Due today" : `In ${daysToNext} day${daysToNext === 1 ? "" : "s"}`} · ${nextMilestone.description}` : "Add your crop and planting date to build a date-based field calendar.",
+      title: nextMilestone ? `${nextMilestone.title} · ${formatDate(nextMilestone.date, locale)}` : cropCalendar.events.length ? t("farmerDashboard.cycleComplete") : t("farmerDashboard.addCropDate"),
+      text: nextMilestone ? `${daysToNext === 0 ? t("farmerDashboard.dueToday") : t("farmerDashboard.dueInDays", { count: daysToNext })} · ${nextMilestone.description}` : t("farmerDashboard.addCropDateText"),
       link: null,
       btnLabel: null,
     };
@@ -146,10 +149,10 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-3 py-1 rounded-full inline-block mb-2">
-                Farmer Dashboard
+                {t("farmerDashboard.title")}
               </span>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900 dark:text-white">
-                Welcome back, {farmerName}
+                {t("farmerDashboard.welcome", { name: farmerName })}
               </h1>
               <p className="text-sm text-stone-600 dark:text-stone-400 flex items-center gap-1.5 mt-1">
                 <MapPin size={14} className="text-emerald-700 shrink-0" />
@@ -162,18 +165,18 @@ export default function Dashboard() {
                 <span className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700">
                   {profile.farmLocation?.farmSize
                     ? `${profile.farmLocation.farmSize} ${profile.farmLocation.measurementUnit || "acres"}`
-                    : "Farm size not provided"}
+                    : t("farmerDashboard.farmSizeMissing")}
                 </span>
                 <span className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 capitalize">
                   {profile.farmLocation?.soilType && profile.farmLocation.soilType !== "unknown"
                     ? `${profile.farmLocation.soilType} soil`
-                    : "Soil type not provided"}
+                    : t("farmerDashboard.soilMissing")}
                 </span>
                 <Link
                   to="/onboarding?edit=1"
                   className="text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:underline px-2 py-1"
                 >
-                  Update profile
+                  {t("farmerDashboard.updateProfile")}
                 </Link>
               </div>
             ) : (
@@ -181,7 +184,7 @@ export default function Dashboard() {
                 to="/onboarding"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-800 text-white font-bold text-sm shadow-sm hover:bg-emerald-900"
               >
-                <span>Complete Onboarding</span>
+                <span>{t("farmerDashboard.completeOnboarding")}</span>
                 <ArrowRight size={15} />
               </Link>
             )}
@@ -196,7 +199,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-200">
-                Crop timeline
+                {t("farmerDashboard.cropTimeline")}
               </p>
               <h2 className="text-sm sm:text-base font-semibold text-white mt-0.5">
                 {nextAction.title}
@@ -225,40 +228,40 @@ export default function Dashboard() {
               <div className="flex items-center gap-2">
                 <Sprout className="h-5 w-5 text-emerald-700" />
                 <h3 className="font-extrabold text-base sm:text-lg text-stone-900 dark:text-white">
-                  Your Crop Plan
+                  {t("farmerDashboard.cropPlan")}
                 </h3>
               </div>
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
-                {isCultivating ? "Active Crop" : "Planned Season"}
+                {isCultivating ? t("farmerDashboard.activeCrop") : t("farmerDashboard.plannedSeason")}
               </span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/50">
-                <span className="text-[11px] font-semibold text-stone-500 uppercase block">Crop</span>
+                <span className="text-[11px] font-semibold text-stone-500 uppercase block">{t("farmerDashboard.crop")}</span>
                 <span className="font-bold text-base text-stone-900 dark:text-white block mt-0.5 capitalize">
-                  {cropName || "Not specified"}
+                  {cropName || t("farmerDashboard.notSpecified")}
                 </span>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/50">
                 <span className="text-[11px] font-semibold text-stone-500 uppercase block">
-                  {isCultivating ? "Planting Date" : "Planned Period"}
+                  {isCultivating ? t("farmerDashboard.plantingDate") : t("farmerDashboard.plannedPeriod")}
                 </span>
                 <span className="font-bold text-sm sm:text-base text-stone-900 dark:text-white block mt-0.5">
-                  {isCultivating ? rawSowingDate ? formatDate(rawSowingDate) : "Recorded" : plannedPeriod ? formatDate(plannedPeriod) : "Upcoming"}
+                  {isCultivating ? rawSowingDate ? formatDate(rawSowingDate, locale) : t("farmerDashboard.recorded") : plannedPeriod ? formatDate(plannedPeriod, locale) : t("farmerDashboard.upcoming")}
                 </span>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/50">
-                <span className="text-[11px] font-semibold text-stone-500 uppercase block">How You Water</span>
+                <span className="text-[11px] font-semibold text-stone-500 uppercase block">{t("farmerDashboard.howYouWater")}</span>
                 <span className="font-bold text-sm sm:text-base text-stone-900 dark:text-white block mt-0.5 capitalize">
                   {displayValue(profile.farmLocation?.irrigationSource)}
                 </span>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/50">
-                <span className="text-[11px] font-semibold text-stone-500 uppercase block">Water Status</span>
+                <span className="text-[11px] font-semibold text-stone-500 uppercase block">{t("farmerDashboard.waterStatus")}</span>
                 <span className="font-bold text-sm sm:text-base text-stone-900 dark:text-white block mt-0.5 capitalize">
                   {displayValue(profile.farmLocation?.waterAvailability)}
                 </span>
@@ -268,15 +271,15 @@ export default function Dashboard() {
         ) : (
           <div className="bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-6 text-center">
             <Sprout className="h-8 w-8 text-emerald-700 mx-auto mb-2" />
-            <h3 className="font-bold text-base text-stone-900 dark:text-white">No crop plan recorded yet</h3>
+            <h3 className="font-bold text-base text-stone-900 dark:text-white">{t("farmerDashboard.noCropPlan")}</h3>
             <p className="text-sm text-stone-600 dark:text-stone-400 mt-1 max-w-md mx-auto">
-              Complete onboarding to record your land size and crop plan, which will generate your personalized task schedule here.
+              {t("farmerDashboard.noCropPlanText")}
             </p>
             <Link
               to="/onboarding"
               className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-800 text-white font-bold text-sm"
             >
-              <span>Start Onboarding</span>
+              <span>{t("farmerDashboard.startOnboarding")}</span>
               <ArrowRight size={15} />
             </Link>
           </div>
@@ -299,7 +302,7 @@ export default function Dashboard() {
             <div className="flex items-center gap-2">
               <CloudRain className="h-5 w-5 text-sky-700" />
               <h3 className="font-extrabold text-base sm:text-lg text-stone-900 dark:text-white">
-                Local weather
+                {t("dashboard.weather")}
               </h3>
             </div>
             <span className="text-xs font-semibold text-stone-500">
@@ -310,15 +313,15 @@ export default function Dashboard() {
           {weatherState.data?.current && (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-sky-50/80 px-4 py-3 dark:bg-sky-950/25">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-800 dark:text-sky-300">Current conditions</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-800 dark:text-sky-300">{t("farmerDashboard.currentConditions")}</p>
                 <p className="mt-0.5 text-xs text-stone-600 dark:text-stone-300">
-                  {weatherState.data.current.apparent_temperature != null && `Feels like ${Math.round(weatherState.data.current.apparent_temperature)}°C`}
-                  {weatherState.data.current.relative_humidity_2m != null && ` · ${Math.round(weatherState.data.current.relative_humidity_2m)}% humidity`}
-                  {weatherState.data.current.precipitation != null && ` · ${weatherState.data.current.precipitation} mm rain`}
+                  {weatherState.data.current.apparent_temperature != null && t("farmerDashboard.feelsLike", { value: Math.round(weatherState.data.current.apparent_temperature) })}
+                  {weatherState.data.current.relative_humidity_2m != null && t("farmerDashboard.humidityValue", { value: Math.round(weatherState.data.current.relative_humidity_2m) })}
+                  {weatherState.data.current.precipitation != null && t("farmerDashboard.rainValue", { value: weatherState.data.current.precipitation })}
                 </p>
               </div>
               <p className="text-2xl font-semibold tracking-tight text-stone-900 dark:text-white" aria-label={`Current temperature ${Math.round(weatherState.data.current.temperature_2m)} degrees Celsius`}>
-                {Math.round(weatherState.data.current.temperature_2m)}°<span className="text-sm font-medium">C now</span>
+                {Math.round(weatherState.data.current.temperature_2m)}°<span className="text-sm font-medium">{t("farmerDashboard.celsiusNow")}</span>
               </p>
             </div>
           )}
@@ -326,7 +329,7 @@ export default function Dashboard() {
           {weatherState.loading && (
             <div className="py-10 text-center text-stone-500 flex items-center justify-center gap-2">
               <Loader2 size={18} className="animate-spin text-emerald-700" />
-              <span className="text-sm font-medium">Checking weather forecast for {districtName}...</span>
+              <span className="text-sm font-medium">{t("farmerDashboard.checkingWeather", { location: districtName })}</span>
             </div>
           )}
 
@@ -334,14 +337,14 @@ export default function Dashboard() {
             <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-amber-900 dark:text-amber-200 text-xs sm:text-sm flex items-start gap-2.5">
               <AlertCircle size={16} className="shrink-0 mt-0.5 text-amber-700" />
               <div>
-                <p className="font-semibold">Weather service status</p>
+                <p className="font-semibold">{t("farmerDashboard.weatherStatus")}</p>
                 <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">{weatherState.error}</p>
                 <button
                   type="button"
                   onClick={() => setWeatherRetryCount((count) => count + 1)}
                   className="mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 dark:border-amber-800 dark:text-amber-200 dark:hover:bg-amber-900/40"
                 >
-                  <RefreshCw size={13} aria-hidden="true" /> Retry weather
+                  <RefreshCw size={13} aria-hidden="true" /> {t("farmerDashboard.retryWeather")}
                 </button>
               </div>
             </div>
@@ -354,9 +357,9 @@ export default function Dashboard() {
                   const dateObj = new Date(day.date);
                   const isToday = idx === 0;
                   const dayLabel = isToday
-                    ? "Today"
-                    : dateObj.toLocaleDateString("en-US", { weekday: "short" });
-                  const dateLabel = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                    ? t("farmerDashboard.today")
+                    : dateObj.toLocaleDateString(locale, { weekday: "short" });
+                  const dateLabel = dateObj.toLocaleDateString(locale, { month: "short", day: "numeric" });
 
                   return (
                     <div
@@ -375,12 +378,12 @@ export default function Dashboard() {
                       </span>
 
                       <div className="my-1">
-                        <span className="text-[10px] font-medium text-stone-500 dark:text-stone-400 block">High</span>
+                        <span className="text-[10px] font-medium text-stone-500 dark:text-stone-400 block">{t("farmerDashboard.high")}</span>
                         <span className="font-extrabold text-base text-stone-900 dark:text-white block">
                           {day.temp_max_c != null ? `${Math.round(day.temp_max_c)}°C` : "—"}
                         </span>
                         <span className="text-[11px] text-stone-500 dark:text-stone-400 block">
-                          Low: {day.temp_min_c != null ? `${Math.round(day.temp_min_c)}°C` : "—"}
+                          {t("farmerDashboard.low")}: {day.temp_min_c != null ? `${Math.round(day.temp_min_c)}°C` : "—"}
                         </span>
                       </div>
 
@@ -407,8 +410,8 @@ export default function Dashboard() {
         <section aria-labelledby="farm-tools-title">
           <div className="mb-3 flex items-end justify-between gap-3">
             <div>
-              <h3 id="farm-tools-title" className="text-base font-semibold tracking-tight text-stone-900 dark:text-white">Farm tools</h3>
-              <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">Useful services, together in one place.</p>
+              <h3 id="farm-tools-title" className="text-base font-semibold tracking-tight text-stone-900 dark:text-white">{t("farmerDashboard.farmTools")}</h3>
+              <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{t("farmerDashboard.farmToolsText")}</p>
             </div>
           </div>
 
@@ -422,13 +425,13 @@ export default function Dashboard() {
                   <LineChart size={16} />
                 </div>
                 <h4 className="text-sm font-semibold text-stone-900 transition-colors group-hover:text-emerald-700 dark:text-white">
-                  Mandi prices
+                  {t("farmerDashboard.mandiPrices")}
                 </h4>
                 <p className="mt-1 text-[11px] leading-relaxed text-stone-500 dark:text-stone-400">
-                  Compare nearby markets and recent crop prices.
+                  {t("farmerDashboard.mandiPricesText")}
                 </p>
               </div>
-              <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">Open tool <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" /></span>
+              <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">{t("farmerDashboard.openTool")} <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" /></span>
             </Link>
 
             <Link
@@ -440,13 +443,13 @@ export default function Dashboard() {
                   <Landmark size={16} />
                 </div>
                 <h4 className="text-sm font-semibold text-stone-900 transition-colors group-hover:text-emerald-700 dark:text-white">
-                  Government schemes
+                  {t("farmerDashboard.govSchemes")}
                 </h4>
                 <p className="mt-1 text-[11px] leading-relaxed text-stone-500 dark:text-stone-400">
-                  Explore support programmes and eligibility details.
+                  {t("farmerDashboard.govSchemesText")}
                 </p>
               </div>
-              <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">Open tool <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" /></span>
+              <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">{t("farmerDashboard.openTool")} <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" /></span>
             </Link>
 
             <Link
@@ -458,13 +461,13 @@ export default function Dashboard() {
                   <Store size={16} />
                 </div>
                 <h4 className="text-sm font-semibold text-stone-900 transition-colors group-hover:text-emerald-700 dark:text-white">
-                  Farmer marketplace
+                  {t("farmerDashboard.marketplace")}
                 </h4>
                 <p className="mt-1 text-[11px] leading-relaxed text-stone-500 dark:text-stone-400">
-                  Browse harvest listings or offer your own produce.
+                  {t("farmerDashboard.marketplaceText")}
                 </p>
               </div>
-              <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">Open tool <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" /></span>
+              <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">{t("farmerDashboard.openTool")} <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" /></span>
             </Link>
 
             <Link
@@ -473,10 +476,10 @@ export default function Dashboard() {
             >
               <div>
                 <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300"><Droplets size={16} /></div>
-                <h4 className="text-sm font-semibold text-stone-900 transition-colors group-hover:text-emerald-700 dark:text-white">Irrigation advisor</h4>
-                <p className="mt-1 text-[11px] leading-relaxed text-stone-500 dark:text-stone-400">Review field moisture and weather inputs for a watering check.</p>
+                <h4 className="text-sm font-semibold text-stone-900 transition-colors group-hover:text-emerald-700 dark:text-white">{t("farmerDashboard.irrigationAdvisor")}</h4>
+                <p className="mt-1 text-[11px] leading-relaxed text-stone-500 dark:text-stone-400">{t("farmerDashboard.irrigationAdvisorText")}</p>
               </div>
-              <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">Open tool <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" /></span>
+              <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">{t("farmerDashboard.openTool")} <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" /></span>
             </Link>
           </div>
         </section>

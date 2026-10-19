@@ -9,7 +9,19 @@
     "logout": "Logout",
     "login": "Login",
     "get_started": "Get Started",
-    "market_intel": "Market Intelligence"
+    "market_intel": "Market Intelligence",
+    "market": "Mandi prices",
+    "market_full": "Mandi prices",
+    "schemes": "Schemes",
+    "schemes_full": "Government schemes",
+    "marketplace": "Marketplace"
+  },
+  "landing": {
+    "eyebrow": "Practical support for your farm",
+    "title": "Plan your season with confidence.",
+    "description": "Create your farm profile to see your crop plan, field calendar, local weather and farmer services in one place.",
+    "cta": "Set up your farm",
+    "services": "Crop plan · Weather · Farmer services"
   },
   "hero": {
     "title": "Precision Agriculture,",
@@ -339,6 +351,10 @@
     "price_note": "Illustrative ₹/quintal values — live model connects to Agmarknet mandi price API",
     "goals": "Platform Goals & Projected Impact"
   },
+  "farmerDashboard": {
+    "title": "Farmer Dashboard", "farmer": "Farmer", "welcome": "Welcome back, {{name}}", "completeProfile": "Complete your farm profile", "completeProfileText": "Add your land size and active crop in onboarding to create your crop calendar and next tasks.", "setupPlan": "Set up farm plan", "cycleComplete": "Current crop cycle complete", "addCropDate": "Add a crop and planting date", "addCropDateText": "Add your crop and planting date to build a dated field calendar.", "dueToday": "Due today", "dueInDays": "In {{count}} days", "farmSizeMissing": "Farm size not provided", "soilMissing": "Soil type not provided", "updateProfile": "Update profile", "completeOnboarding": "Complete onboarding", "cropTimeline": "Crop timeline", "cropPlan": "Your crop plan", "activeCrop": "Active crop", "plannedSeason": "Planned season", "crop": "Crop", "notSpecified": "Not specified", "plantingDate": "Planting date", "plannedPeriod": "Planned period", "recorded": "Recorded", "upcoming": "Upcoming", "howYouWater": "How you water", "waterStatus": "Water status", "noCropPlan": "No crop plan recorded yet", "noCropPlanText": "Complete onboarding to add your land and crop plan. Your field calendar will appear here.", "startOnboarding": "Start onboarding", "currentConditions": "Current conditions", "feelsLike": "Feels like {{value}}°C", "humidityValue": " · {{value}}% humidity", "rainValue": " · {{value}} mm rain", "celsiusNow": "C now", "checkingWeather": "Checking weather for {{location}}…", "weatherStatus": "Weather service status", "retryWeather": "Retry weather", "today": "Today", "high": "High", "low": "Low", "farmTools": "Farm tools", "farmToolsText": "Useful services, together in one place.", "openTool": "Open tool", "mandiPrices": "Mandi prices", "mandiPricesText": "Compare nearby markets and recent crop prices.", "govSchemes": "Government schemes", "govSchemesText": "Explore support programmes and eligibility details.", "marketplace": "Farmer marketplace", "marketplaceText": "Browse harvest listings or offer your own produce.", "irrigationAdvisor": "Irrigation advisor", "irrigationAdvisorText": "Check field moisture and local weather before watering.", "notSet": "Not set"
+  },
+  "cropCalendar": {"done":"Done","pastCheck":"Date passed · did you do this?","fieldCheck":"Field check","comingUp":"Coming up","undo":"Undo","markDone":"Mark done","addCrop":"Add your crop and planting date to see your farm calendar","useSavedPlan":"We use the crop plan you saved during onboarding.","title":"{{crop}} farm calendar","orchardCare":"Orchard care","growingNow":"Growing now","viewLabel":"Crop calendar view","month":"Month","allTasks":"All tasks","tasksThisMonth":"{{count}} crop tasks this month","previousMonth":"Previous month","nextMonth":"Next month"},
   "common": {
     "live": "Live",
     "coming_soon": "Soon",

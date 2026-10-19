@@ -15,18 +15,19 @@ import {
   Sprout,
 } from "lucide-react";
 import { buildCropCalendar, calendarDateKey, parseCalendarDate } from "../services/cropCalendar";
+import { useTranslation } from "react-i18next";
 
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const STORAGE_PREFIX = "krishi_crop_calendar_done_v1";
-const prettyDate = (value, options = { day: "numeric", month: "short", year: "numeric" }) => {
+const prettyDate = (value, options = { day: "numeric", month: "short", year: "numeric" }, locale = "en-IN") => {
   const date = typeof value === "string" ? parseCalendarDate(value) : value;
-  return date ? date.toLocaleDateString("en-IN", options) : "Date not set";
+  return date ? date.toLocaleDateString(locale, options) : "Date not set";
 };
-const monthLabel = (date) => date.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+const monthLabel = (date, locale = "en-IN") => date.toLocaleDateString(locale, { month: "long", year: "numeric" });
 const sameMonth = (a, b) => a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
 const moveMonth = (date, amount) => new Date(date.getFullYear(), date.getMonth() + amount, 1);
 
 function TaskItem({ event, status, onToggle, compact = false }) {
+  const { t, i18n } = useTranslation();
   const done = status === "done";
   const past = status === "past";
   const taskTone = event.kind === "stage"
@@ -52,15 +53,15 @@ function TaskItem({ event, status, onToggle, compact = false }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
             <h4 className={`text-sm font-bold ${done ? "text-emerald-900 dark:text-emerald-200" : "text-stone-900 dark:text-white"}`}>{event.title}</h4>
-            <time className="text-[11px] font-semibold text-stone-500 dark:text-stone-400">{prettyDate(event.date)}</time>
+            <time className="text-[11px] font-semibold text-stone-500 dark:text-stone-400">{prettyDate(event.date, { day: "numeric", month: "short", year: "numeric" }, i18n.resolvedLanguage)}</time>
           </div>
           {!compact && <p className="mt-1.5 text-xs leading-relaxed text-stone-600 dark:text-stone-300">{event.description}</p>}
           <div className="mt-2 flex items-center justify-between gap-2">
             <span className={`text-[10px] font-semibold uppercase tracking-wide ${done ? "text-emerald-700 dark:text-emerald-300" : past ? "text-rose-700 dark:text-rose-300" : status === "today" ? "text-amber-800 dark:text-amber-200" : "text-stone-400"}`}>
-              {done ? "Done" : past ? "Date passed · did you do this?" : status === "today" ? "Today" : event.kind === "routine" ? "Field check" : "Coming up"}
+              {done ? t("cropCalendar.done") : past ? t("cropCalendar.pastCheck") : status === "today" ? t("farmerDashboard.today") : event.kind === "routine" ? t("cropCalendar.fieldCheck") : t("cropCalendar.comingUp")}
             </span>
             <button type="button" onClick={() => onToggle(event.id)} className={`inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-semibold transition ${done ? "text-emerald-800 hover:bg-emerald-100 dark:text-emerald-200 dark:hover:bg-emerald-950/60" : "text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800"}`}>
-              {done ? <><RotateCcw size={12} /> Undo</> : <><CheckCircle2 size={13} /> Mark done</>}
+              {done ? <><RotateCcw size={12} /> {t("cropCalendar.undo")}</> : <><CheckCircle2 size={13} /> {t("cropCalendar.markDone")}</>}
             </button>
           </div>
         </div>
@@ -70,6 +71,8 @@ function TaskItem({ event, status, onToggle, compact = false }) {
 }
 
 export default function CropCalendar({ cropName, isCultivating, sowingDate, plannedDate }) {
+  const { t, i18n } = useTranslation();
+  const weekdays = Array.from({ length: 7 }, (_, index) => new Date(2023, 0, 2 + index).toLocaleDateString(i18n.resolvedLanguage || "en-IN", { weekday: "short" }));
   const model = useMemo(() => buildCropCalendar({ cropName, isCultivating, sowingDate, plannedDate }), [cropName, isCultivating, sowingDate, plannedDate]);
   const storageKey = `${STORAGE_PREFIX}:${cropName || "crop"}:${sowingDate || plannedDate || "no-date"}`;
   const [completed, setCompleted] = useState(() => {
@@ -126,8 +129,8 @@ export default function CropCalendar({ cropName, isCultivating, sowingDate, plan
   if (!model.events.length) {
     return <section className="rounded-2xl border border-dashed border-stone-300 bg-white p-6 text-center dark:border-stone-700 dark:bg-stone-900">
       <CalendarDays className="mx-auto mb-2 h-6 w-6 text-emerald-700" />
-      <p className="text-sm font-bold">Add your crop and planting date to see your farm calendar</p>
-      <p className="mt-1 text-xs text-stone-500">We use the crop plan you saved during onboarding.</p>
+      <p className="text-sm font-bold">{t("cropCalendar.addCrop")}</p>
+      <p className="mt-1 text-xs text-stone-500">{t("cropCalendar.useSavedPlan")}</p>
     </section>;
   }
 
@@ -136,10 +139,10 @@ export default function CropCalendar({ cropName, isCultivating, sowingDate, plan
       <header className="flex flex-col justify-between gap-3 border-b border-stone-100 pb-4 dark:border-stone-800 sm:flex-row sm:items-center">
         <div className="flex items-center gap-3">
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"><CalendarDays size={19} /></span>
-          <div><div className="flex flex-wrap items-center gap-2"><h3 className="text-base font-extrabold capitalize sm:text-lg">{cropName} farm calendar</h3><span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">{model.perennial ? "Orchard care" : isCultivating ? "Growing now" : "Planned crop"}</span></div><p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{phaseText}</p></div>
+          <div><div className="flex flex-wrap items-center gap-2"><h3 className="text-base font-extrabold capitalize sm:text-lg">{t("cropCalendar.title", { crop: cropName })}</h3><span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">{model.perennial ? t("cropCalendar.orchardCare") : isCultivating ? t("cropCalendar.growingNow") : t("farmerDashboard.plannedSeason")}</span></div><p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{phaseText}</p></div>
         </div>
-        <div className="inline-flex w-fit rounded-xl bg-stone-100 p-1 dark:bg-stone-800" role="tablist" aria-label="Crop calendar view">
-          {["month", "timeline"].map((item) => <button key={item} role="tab" aria-selected={view === item} onClick={() => setView(item)} className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition ${view === item ? "bg-white text-emerald-900 shadow-sm dark:bg-stone-700 dark:text-emerald-200" : "text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-white"}`}>{item === "month" ? "Month" : "All tasks"}</button>)}
+        <div className="inline-flex w-fit rounded-xl bg-stone-100 p-1 dark:bg-stone-800" role="tablist" aria-label={t("cropCalendar.viewLabel")}>
+          {["month", "timeline"].map((item) => <button key={item} role="tab" aria-selected={view === item} onClick={() => setView(item)} className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition ${view === item ? "bg-white text-emerald-900 shadow-sm dark:bg-stone-700 dark:text-emerald-200" : "text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-white"}`}>{item === "month" ? t("cropCalendar.month") : t("cropCalendar.allTasks")}</button>)}
         </div>
       </header>
 
@@ -147,10 +150,10 @@ export default function CropCalendar({ cropName, isCultivating, sowingDate, plan
         {view === "month" ? (
           <div className="rounded-2xl border border-stone-200 p-3 dark:border-stone-800 sm:p-4">
             <div className="mb-3 flex items-center justify-between">
-              <div><h4 className="text-sm font-bold">{monthLabel(visibleMonth)}</h4><p className="text-[10px] text-stone-500">{model.events.filter((event) => sameMonth(parseCalendarDate(event.date), visibleMonth)).length} crop tasks this month</p></div>
-              <div className="flex items-center gap-1"><button type="button" onClick={() => setVisibleMonth((month) => moveMonth(month, -1))} className="grid h-8 w-8 place-items-center rounded-lg text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800" aria-label="Previous month"><ChevronLeft size={17} /></button><button type="button" onClick={() => { setVisibleMonth(new Date(today.getFullYear(), today.getMonth(), 1)); setSelectedDate(today); }} className="rounded-lg px-2 py-1.5 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/40">Today</button><button type="button" onClick={() => setVisibleMonth((month) => moveMonth(month, 1))} className="grid h-8 w-8 place-items-center rounded-lg text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800" aria-label="Next month"><ChevronRight size={17} /></button></div>
+              <div><h4 className="text-sm font-bold">{monthLabel(visibleMonth, i18n.resolvedLanguage)}</h4><p className="text-[10px] text-stone-500">{t("cropCalendar.tasksThisMonth", { count: model.events.filter((event) => sameMonth(parseCalendarDate(event.date), visibleMonth)).length })}</p></div>
+              <div className="flex items-center gap-1"><button type="button" onClick={() => setVisibleMonth((month) => moveMonth(month, -1))} className="grid h-8 w-8 place-items-center rounded-lg text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800" aria-label={t("cropCalendar.previousMonth")}><ChevronLeft size={17} /></button><button type="button" onClick={() => { setVisibleMonth(new Date(today.getFullYear(), today.getMonth(), 1)); setSelectedDate(today); }} className="rounded-lg px-2 py-1.5 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/40">{t("farmerDashboard.today")}</button><button type="button" onClick={() => setVisibleMonth((month) => moveMonth(month, 1))} className="grid h-8 w-8 place-items-center rounded-lg text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800" aria-label={t("cropCalendar.nextMonth")}><ChevronRight size={17} /></button></div>
             </div>
-            <div className="grid grid-cols-7 border-b border-stone-100 pb-2 text-center dark:border-stone-800">{WEEKDAYS.map((day) => <span key={day} className="text-[10px] font-semibold uppercase tracking-wide text-stone-400">{day}</span>)}</div>
+            <div className="grid grid-cols-7 border-b border-stone-100 pb-2 text-center dark:border-stone-800">{weekdays.map((day) => <span key={day} className="text-[10px] font-semibold uppercase tracking-wide text-stone-400">{day}</span>)}</div>
             <div className="mt-1 grid grid-cols-7 gap-1">
               {gridDays.map((date) => {
                 const key = calendarDateKey(date);

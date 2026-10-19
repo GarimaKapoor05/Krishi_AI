@@ -26,6 +26,19 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
+  // Protected API calls can discover an expired token after the app has
+  // restored it from storage. Keep the UI session in sync with that response.
+  useEffect(() => {
+    const handleExpiredSession = () => {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      setToken(null);
+      setUser(null);
+    };
+    window.addEventListener("krishi:auth-expired", handleExpiredSession);
+    return () => window.removeEventListener("krishi:auth-expired", handleExpiredSession);
+  }, []);
+
   // Call this after a successful login API response
   const login = (accessToken, userData) => {
     localStorage.setItem("token", accessToken);

@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Sprout, Menu, X, LayoutDashboard, LogOut, User, Store, Landmark, LineChart } from "lucide-react";
+import { Sprout, Menu, X, LayoutDashboard, LogOut, User, Store, Landmark, LineChart, Languages } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useTranslation } from "react-i18next";
 
 export default function Navbar() {
   const { isLoggedIn, user, logout } = useAuth();
+  const { t, i18n } = useTranslation();
   const location = useLocation();
   const isLanding = location.pathname === "/";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -27,11 +29,29 @@ export default function Navbar() {
   }, [mobileMenuOpen]);
 
   const navLinks = [
-    { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { to: "/features/market-intelligence", label: "Mandi", fullLabel: "Mandi Prices", icon: LineChart },
-    { to: "/features/schemes", label: "Schemes", fullLabel: "Government Schemes", icon: Landmark },
-    { to: "/marketplace", label: "Marketplace", icon: Store },
+    { to: "/dashboard", label: t("nav.dashboard", { defaultValue: "Dashboard" }), icon: LayoutDashboard },
+    { to: "/features/market-intelligence", label: t("nav.market", { defaultValue: "Mandi prices" }), fullLabel: t("nav.market_full", { defaultValue: "Mandi prices" }), icon: LineChart },
+    { to: "/features/schemes", label: t("nav.schemes", { defaultValue: "Schemes" }), fullLabel: t("nav.schemes_full", { defaultValue: "Government schemes" }), icon: Landmark },
+    { to: "/marketplace", label: t("nav.marketplace", { defaultValue: "Marketplace" }), icon: Store },
   ];
+
+  const languagePicker = (compact = false) => (
+    <label className={`inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-2.5 ${compact ? "min-h-11 w-full" : "h-9"} text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200`}>
+      <Languages size={15} aria-hidden="true" />
+      <span className="sr-only">Choose language</span>
+      <select
+        aria-label="Choose language"
+        value={i18n.resolvedLanguage?.split("-")[0] || "en"}
+        onChange={(event) => i18n.changeLanguage(event.target.value)}
+        className={`min-w-0 bg-transparent outline-none ${compact ? "flex-1" : "max-w-24"}`}
+      >
+        <option value="en">English</option>
+        <option value="hi">हिन्दी</option>
+        <option value="ta">தமிழ்</option>
+        <option value="ur">اردو</option>
+      </select>
+    </label>
+  );
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-[#FAF9F5]/95 dark:bg-[#0b1410]/95 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800 transition-colors">
@@ -83,6 +103,8 @@ export default function Navbar() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {isLanding && <div className="sm:hidden">{languagePicker()}</div>}
+            <div className="hidden sm:block">{languagePicker()}</div>
             {isLoggedIn ? (
               <div className="flex items-center gap-2">
                 <Link
@@ -100,7 +122,7 @@ export default function Navbar() {
                   aria-label="Log out"
                 >
                   <LogOut size={16} />
-                  <span className="hidden sm:inline">Log out</span>
+                  <span className="hidden sm:inline">{t("nav.logout", { defaultValue: "Log out" })}</span>
                 </button>}
               </div>
             ) : (
@@ -109,14 +131,14 @@ export default function Navbar() {
                   to="/login"
                   className="px-3.5 py-2 rounded-xl text-sm font-semibold text-stone-700 dark:text-stone-300 hover:text-emerald-800 dark:hover:text-emerald-400 transition-colors"
                 >
-                  Log in
+                  {t("nav.login", { defaultValue: "Log in" })}
                 </Link>
 
                 {!isLanding && <Link
                   to="/onboarding"
                   className="bg-emerald-800 hover:bg-emerald-900 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-sm hover:shadow transition-all"
                 >
-                  Get started
+                  {t("nav.get_started", { defaultValue: "Get started" })}
                 </Link>}
               </div>
             )}
@@ -188,6 +210,7 @@ export default function Navbar() {
         </div>
 
         <div className="p-4 border-t border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/60">
+          <div className="mb-3 sm:hidden">{languagePicker(true)}</div>
           {isLoggedIn ? (
             <div className="space-y-3">
               <div className="flex items-center gap-2.5 px-2">
@@ -211,7 +234,7 @@ export default function Navbar() {
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border border-red-200 text-red-600 bg-white dark:bg-stone-800"
               >
                 <LogOut size={16} />
-                <span>Log out</span>
+                <span>{t("nav.logout", { defaultValue: "Log out" })}</span>
               </button>
             </div>
           ) : (
@@ -221,14 +244,14 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border border-stone-300 dark:border-stone-700 text-stone-800 dark:text-white bg-white dark:bg-stone-800"
               >
-                Log in
+                {t("nav.login", { defaultValue: "Log in" })}
               </Link>
               <Link
                 to="/onboarding"
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full text-center py-2.5 rounded-xl text-sm font-bold bg-emerald-800 text-white shadow-sm"
               >
-                Get started
+                {t("nav.get_started", { defaultValue: "Get started" })}
               </Link>
             </div>
           )}

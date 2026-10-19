@@ -8,7 +8,19 @@
     "my_dashboard": "میرا ڈیش بورڈ",
     "logout": "لاگ آؤٹ",
     "login": "لاگ اِن",
-    "get_started": "شروع کریں"
+    "get_started": "شروع کریں",
+    "market": "منڈی کے بھاؤ",
+    "market_full": "منڈی کی قیمتیں",
+    "schemes": "سرکاری اسکیمیں",
+    "schemes_full": "سرکاری اسکیمیں",
+    "marketplace": "کسان بازار"
+  },
+  "landing": {
+    "eyebrow": "آپ کے کھیت کے لیے عملی مدد",
+    "title": "اعتماد کے ساتھ اپنے موسم کی منصوبہ بندی کریں۔",
+    "description": "اپنی فصل کا منصوبہ، کھیت کا کیلنڈر، مقامی موسم اور کسانوں کی خدمات ایک جگہ دیکھنے کے لیے کھیت کی معلومات شامل کریں۔",
+    "cta": "اپنے کھیت کی معلومات شامل کریں",
+    "services": "فصل کا منصوبہ · موسم · کسانوں کی خدمات"
   },
   "hero": {
     "title": "درست زراعت،",
@@ -338,6 +350,10 @@
     "price_note": "نمائشی ₹/کوئنٹل قیمتیں — لائیو ماڈل Agmarknet منڈی قیمت API سے منسلک ہوتا ہے",
     "goals": "پلیٹ فارم کے اہداف اور متوقع اثرات"
   },
+  "farmerDashboard": {
+    "title": "کسان ڈیش بورڈ", "farmer": "کسان", "welcome": "واپس خوش آمدید، {{name}}", "completeProfile": "اپنے کھیت کی معلومات مکمل کریں", "completeProfileText": "اپنی زمین اور فصل کی معلومات شامل کریں تاکہ فصل کا کیلنڈر اور اگلے کام بن سکیں۔", "setupPlan": "کھیتی کا منصوبہ بنائیں", "cycleComplete": "فصل کا موجودہ دور مکمل ہے", "addCropDate": "فصل اور بوائی کی تاریخ شامل کریں", "addCropDateText": "تاریخوں والا کھیت کیلنڈر بنانے کے لیے فصل اور بوائی کی تاریخ شامل کریں۔", "dueToday": "آج کرنا ہے", "dueInDays": "{{count}} دن میں", "farmSizeMissing": "کھیت کا رقبہ درج نہیں", "soilMissing": "مٹی کی قسم درج نہیں", "updateProfile": "معلومات تبدیل کریں", "completeOnboarding": "کھیت کی معلومات مکمل کریں", "cropTimeline": "فصل کا وقت نامہ", "cropPlan": "آپ کی فصل کا منصوبہ", "activeCrop": "موجودہ فصل", "plannedSeason": "منصوبہ بند موسم", "crop": "فصل", "notSpecified": "درج نہیں", "plantingDate": "بوائی کی تاریخ", "plannedPeriod": "منصوبہ بند مدت", "recorded": "درج ہے", "upcoming": "آنے والا", "howYouWater": "پانی دینے کا طریقہ", "waterStatus": "پانی کی حالت", "noCropPlan": "فصل کا منصوبہ ابھی درج نہیں", "noCropPlanText": "اپنی زمین اور فصل کا منصوبہ شامل کریں۔ آپ کا کھیت کیلنڈر یہاں نظر آئے گا۔", "startOnboarding": "شروع کریں", "currentConditions": "موجودہ موسم", "feelsLike": "محسوس ہونے والا درجہ حرارت {{value}}°C", "humidityValue": " · نمی {{value}}%", "rainValue": " · بارش {{value}} ملی میٹر", "celsiusNow": "C ابھی", "checkingWeather": "{{location}} کا موسم دیکھا جا رہا ہے…", "weatherStatus": "موسمی خدمت کی حالت", "retryWeather": "موسم دوبارہ دیکھیں", "today": "آج", "high": "زیادہ", "low": "کم", "farmTools": "کھیتی کے اوزار", "farmToolsText": "ضروری خدمات ایک ہی جگہ۔", "openTool": "کھولیں", "mandiPrices": "منڈی کے بھاؤ", "mandiPricesText": "قریبی منڈیوں اور حالیہ فصلوں کے بھاؤ کا موازنہ کریں۔", "govSchemes": "سرکاری اسکیمیں", "govSchemesText": "کسانوں کی امداد اور اہلیت کی معلومات دیکھیں۔", "marketplace": "کسان بازار", "marketplaceText": "فصل کی فہرستیں دیکھیں یا اپنی پیداوار شامل کریں۔", "irrigationAdvisor": "آبپاشی کا مشورہ", "irrigationAdvisorText": "پانی دینے سے پہلے مٹی کی نمی اور مقامی موسم دیکھیں۔", "notSet": "درج نہیں"
+  },
+  "cropCalendar": {"done":"مکمل","pastCheck":"تاریخ گزر گئی · کیا آپ نے یہ کام کیا؟","fieldCheck":"کھیت کا جائزہ","comingUp":"اگلا کام","undo":"واپس کریں","markDone":"مکمل نشان لگائیں","addCrop":"کیلنڈر دیکھنے کے لیے فصل اور بوائی کی تاریخ شامل کریں","useSavedPlan":"یہاں آپ کے محفوظ کردہ فصل کے منصوبے کا استعمال ہوتا ہے۔","title":"{{crop}} کا کھیت کیلنڈر","orchardCare":"باغ کی دیکھ بھال","growingNow":"فصل بڑھ رہی ہے","viewLabel":"فصل کیلنڈر کا منظر","month":"مہینہ","allTasks":"تمام کام","tasksThisMonth":"اس ماہ فصل کے {{count}} کام","previousMonth":"پچھلا مہینہ","nextMonth":"اگلا مہینہ"},
   "common": {
     "live": "فعال",
     "coming_soon": "جلد آرہا ہے",
