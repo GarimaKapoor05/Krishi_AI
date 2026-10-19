@@ -86,7 +86,7 @@ function App() {
         </Routes>
       </main>
 
-      {!isOnboarding && !isLanding && <Footer />}
+      {!isOnboarding && <Footer />}
     </div>
   );
 }
