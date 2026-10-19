@@ -676,7 +676,7 @@ def fetch_weather(lat: float | None = None, lon: float | None = None,
     if lat is None or lon is None:
         lat, lon = MARKET_COORDS["bhopal"]
 
-    cache_key = f"weather|{round(lat,2)}|{round(lon,2)}|{forecast_days}"
+    cache_key = f"weather:v2|{round(lat,2)}|{round(lon,2)}|{forecast_days}"
     cached = _cache.get(cache_key)
     if cached is not None:
         return cached
@@ -685,9 +685,10 @@ def fetch_weather(lat: float | None = None, lon: float | None = None,
         "latitude": lat,
         "longitude": lon,
         "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum",
+        "hourly": "relative_humidity_2m",
         "timezone": "Asia/Kolkata",
         "forecast_days": max(1, min(16, forecast_days)),
-        "past_days": 3,
+        "past_days": 0,
     }
     try:
         resp = requests.get(OPEN_METEO_URL, params=params, timeout=HTTP_TIMEOUT)
@@ -697,6 +698,11 @@ def fetch_weather(lat: float | None = None, lon: float | None = None,
         raise DataSourceError(f"Open-Meteo request failed: {exc}") from exc
 
     daily = payload.get("daily") or {}
+    hourly = payload.get("hourly") or {}
+    humidity_by_date: dict[str, list[float]] = {}
+    for timestamp, humidity in zip(hourly.get("time") or [], hourly.get("relative_humidity_2m") or []):
+        if humidity is not None:
+            humidity_by_date.setdefault(timestamp.split("T", 1)[0], []).append(float(humidity))
     days = []
     times = daily.get("time") or []
     for i, date in enumerate(times):
@@ -705,6 +711,8 @@ def fetch_weather(lat: float | None = None, lon: float | None = None,
             "temp_max_c": _safe_index(daily.get("temperature_2m_max"), i),
             "temp_min_c": _safe_index(daily.get("temperature_2m_min"), i),
             "rainfall_mm": _safe_index(daily.get("precipitation_sum"), i),
+            "humidity_percent": round(sum(humidity_by_date[date]) / len(humidity_by_date[date]), 1)
+            if humidity_by_date.get(date) else None,
         })
     result = {
         "latitude": lat,

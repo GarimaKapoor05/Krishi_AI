@@ -1,514 +1,583 @@
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
-  Sprout,
-  FlaskConical,
-  Droplets,
-  Bug,
-  TrendingUp,
-  BookOpen,
-  Mic,
+  Calendar,
   CloudRain,
   Thermometer,
-  Wind,
-  Bell,
-  ArrowRight,
-  BarChart2,
+  Sprout,
   CheckCircle2,
-  ShieldCheck,
-  Calendar,
-  Sparkles,
+  AlertCircle,
+  Clock,
+  MapPin,
+  Ruler,
+  Droplets,
   LineChart,
+  Landmark,
+  Store,
+  ArrowRight,
+  User,
+  Loader2,
+  RefreshCw,
 } from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import { useTranslation } from "react-i18next";
+import { useAuth } from "../context/AuthContext";
+import { getFarmWeather } from "../services/weatherLocation";
 
-// ── Sample Mandi trend data (explicitly labeled as demo) ──────────────────────────
-const priceData = [
-  { month: "Jan", wheat: 2100, rice: 3200 },
-  { month: "Feb", wheat: 2400, rice: 3000 },
-  { month: "Mar", wheat: 2200, rice: 3800 },
-  { month: "Apr", wheat: 2900, rice: 3500 },
-  { month: "May", wheat: 3100, rice: 4100 },
-  { month: "Jun", wheat: 2800, rice: 3900 },
-];
-
-const modules = [
-  {
-    titleKey: "crop_recommendation",
-    descKey: "crop_recommendation_desc",
-    icon: Sprout,
-    link: "/crop-prediction",
-    status: "live",
-    badge: "AI Recommended",
-    color: "from-emerald-700 to-green-800",
-  },
-  {
-    titleKey: "fertilizer_advisor",
-    descKey: "fertilizer_advisor_desc",
-    icon: FlaskConical,
-    link: "/fertilizer-prediction",
-    status: "live",
-    badge: "NPK Balance",
-    color: "from-amber-700 to-yellow-800",
-  },
-  {
-    titleKey: "irrigation_advisor",
-    descKey: "irrigation_advisor_desc",
-    icon: Droplets,
-    link: "/features/irrigation",
-    status: "live",
-    badge: "Water Schedule",
-    color: "from-sky-700 to-blue-800",
-  },
-  {
-    titleKey: "price_forecaster",
-    descKey: "price_forecaster_desc",
-    icon: TrendingUp,
-    link: "/features/price-prediction",
-    status: "live",
-    badge: "LSTM 24h",
-    color: "from-teal-700 to-emerald-800",
-  },
-  {
-    titleKey: "market_intelligence",
-    descKey: "market_intelligence_desc",
-    icon: LineChart,
-    link: "/features/market-intelligence",
-    status: "live",
-    badge: "Sell / Hold",
-    color: "from-emerald-700 to-teal-900",
-  },
-  {
-    titleKey: "disease_detection",
-    descKey: "disease_detection_desc",
-    icon: Bug,
-    link: "/disease-ai",
-    status: "coming",
-    badge: "Beta",
-  },
-  {
-    titleKey: "farm_records",
-    descKey: "farm_records_desc",
-    icon: BookOpen,
-    link: "/features/records",
-    status: "coming",
-    badge: "Digital Khata",
-  },
-  {
-    titleKey: "voice_assistant",
-    descKey: "voice_assistant_desc",
-    icon: Mic,
-    link: "/features/voice-assistant",
-    status: "coming",
-    badge: "Voice AI",
-  },
-];
-
-const alerts = [
-  {
-    type: "warning",
-    messageKey: "alert_soil_moisture",
-    timeKey: "time_2_hours_ago",
-  },
-  {
-    type: "info",
-    messageKey: "alert_rice_prices",
-    timeKey: "time_5_hours_ago",
-  },
-  {
-    type: "success",
-    messageKey: "alert_fertilizer_window",
-    timeKey: "time_yesterday",
-  },
-];
-
-const alertStyles = {
-  warning:
-    "bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200",
-  info: "bg-sky-50 dark:bg-sky-950/30 border-sky-300 dark:border-sky-800 text-sky-900 dark:text-sky-200",
-  success:
-    "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200",
-};
-
-const alertIcons = {
-  warning: "⚠️",
-  info: "ℹ️",
-  success: "✅",
-};
-
-const stats = [
-  { labelKey: "farmers_to_reach", value: "120K+", subtitle: "Target Impact" },
-  { labelKey: "water_reduction_target", value: "38%", subtitle: "Water Conserved" },
-  { labelKey: "co2_offset_goal", value: "2.4M t", subtitle: "Emission Offset" },
-  { labelKey: "detection_accuracy", value: "94%", subtitle: "Model Certainty" },
-];
+const PROFILE_KEY = "krishi_farm_profile_v2";
 
 export default function Dashboard() {
-  const { t } = useTranslation();
-
-  const today = new Date().toLocaleDateString("en-IN", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
+  const { user } = useAuth();
+  const [profile, setProfile] = useState(null);
+  const [weatherState, setWeatherState] = useState({
+    loading: true,
+    data: null,
+    error: null,
   });
 
+  // Load saved farm profile from onboarding
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(PROFILE_KEY);
+      if (raw) {
+        setProfile(JSON.parse(raw));
+      }
+    } catch {
+      // Local storage unavailable
+    }
+  }, []);
+
+  // Resolve the farm's actual district/state; never substitute a different city.
+  const accountLocation = (user?.location || "").split(",").map((part) => part.trim());
+  const farmLocation = profile?.farmLocation?.district
+    ? profile.farmLocation
+    : { district: accountLocation[0], state: accountLocation[1] };
+  const districtName = farmLocation.district || "your farm";
+  const weatherLocationKey = `${farmLocation.district || ""}|${farmLocation.state || ""}`;
+
+  useEffect(() => {
+    let isMounted = true;
+    setWeatherState({ loading: true, data: null, error: null });
+
+    getFarmWeather(farmLocation)
+      .then((data) => {
+        if (isMounted) {
+          setWeatherState({
+            loading: false,
+            data,
+            error: null,
+          });
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          setWeatherState({
+            loading: false,
+            data: null,
+            error: err.message || "Weather data is currently unavailable.",
+          });
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [weatherLocationKey]);
+
+  // Farmer's name
+  const farmerName =
+    profile?.account?.firstName
+      ? `${profile.account.firstName} ${profile.account.lastName || ""}`.trim()
+      : user?.username || user?.name || "Farmer";
+
+  // Location display
+  const locationText =
+    [profile?.farmLocation?.village, profile?.farmLocation?.district, profile?.farmLocation?.state]
+      .filter(Boolean)
+      .join(", ") || user?.location || "India";
+
+  // Determine active vs planning crop details
+  const isCultivating = profile?.farmingStatus === "active";
+  const isPlanning = profile?.farmingStatus === "planning";
+
+  const cropName = isCultivating
+    ? profile?.activeFarming?.cropName || "Current Crop"
+    : isPlanning
+    ? profile?.planningFarming?.primaryCrop || profile?.planningFarming?.interestedCrops?.[0] || profile?.planningFarming?.cropRecommendation?.recommended_crop || "Planned Crop"
+    : null;
+
+  const rawSowingDate = profile?.activeFarming?.sowingDate;
+  const plannedPeriod = profile?.planningFarming?.plannedSowingPeriod;
+  const plannedSeason = profile?.planningFarming?.farmingSeason;
+
+  // Generate dated crop calendar tasks
+  const calendarTasks = (() => {
+    if (!profile) return [];
+
+    if (isCultivating && rawSowingDate) {
+      const baseDate = new Date(rawSowingDate);
+      const isValid = !isNaN(baseDate.getTime());
+
+      const addDays = (days) => {
+        if (!isValid) return `Day ${days}`;
+        const d = new Date(baseDate);
+        d.setDate(d.getDate() + days);
+        return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      };
+
+      const now = new Date();
+      const daysSinceSowing = isValid ? Math.floor((now - baseDate) / (1000 * 60 * 60 * 24)) : 0;
+
+      return [
+        {
+          dayOffset: 0,
+          dateStr: isValid ? baseDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Day 0",
+          title: "Sowing & Seed Treatment",
+          desc: "Complete primary seed treatment with bio-fungicide and sow seeds at recommended depth.",
+          status: daysSinceSowing >= 0 ? "done" : "upcoming",
+        },
+        {
+          dayOffset: 15,
+          dateStr: addDays(15),
+          title: "Seedling Emergence & Stand Check",
+          desc: "Inspect germination uniformity across rows. Provide a light irrigation if the topsoil has dried.",
+          status: daysSinceSowing >= 15 ? "done" : daysSinceSowing >= 0 ? "next" : "upcoming",
+        },
+        {
+          dayOffset: 30,
+          dateStr: addDays(30),
+          title: "Weeding & First Nutrient Dose",
+          desc: "Perform first intercultural weeding. Apply the planned first split of nitrogen / compost as required.",
+          status: daysSinceSowing >= 30 ? "done" : daysSinceSowing >= 15 ? "next" : "upcoming",
+        },
+        {
+          dayOffset: 45,
+          dateStr: addDays(45),
+          title: "Crown Root / Tillering Stage",
+          desc: "Assess tillering progress and maintain adequate root-zone soil moisture.",
+          status: daysSinceSowing >= 45 ? "done" : daysSinceSowing >= 30 ? "next" : "upcoming",
+        },
+        {
+          dayOffset: 60,
+          dateStr: addDays(60),
+          title: "Vegetative Growth & Pest Scouting",
+          desc: "Scout underside of leaves for early insect activity or fungal spots before flowering.",
+          status: daysSinceSowing >= 60 ? "done" : daysSinceSowing >= 45 ? "next" : "upcoming",
+        },
+        {
+          dayOffset: 90,
+          dateStr: addDays(90),
+          title: "Flowering & Grain Development",
+          desc: "Critical water demand stage. Ensure field does not face dry stress during grain formation.",
+          status: daysSinceSowing >= 90 ? "done" : daysSinceSowing >= 60 ? "next" : "upcoming",
+        },
+        {
+          dayOffset: 120,
+          dateStr: addDays(120),
+          title: "Physiological Maturity & Harvest",
+          desc: "Inspect grain hardness and moisture content (12-14%). Check nearby mandi prices before cutting.",
+          status: daysSinceSowing >= 120 ? "done" : daysSinceSowing >= 90 ? "next" : "upcoming",
+        },
+      ];
+    }
+
+    // Planning branch
+    return [
+      {
+        dateStr: "3 Weeks Before Sowing",
+        title: "Field Preparation & Deep Plowing",
+        desc: "Plow field and incorporate well-rotted farmyard manure (FYM) to improve moisture retention.",
+        status: "next",
+      },
+      {
+        dateStr: "2 Weeks Before Sowing",
+        title: "Seed Sourcing & Germination Test",
+        desc: "Procure certified high-yield seed varieties from registered cooperatives; test germination rate.",
+        status: "upcoming",
+      },
+      {
+        dateStr: "1 Week Before Sowing",
+        title: "Pre-sowing Irrigation (Paleva)",
+        desc: "Give a light irrigation to establish adequate soil moisture for uniform seed emergence.",
+        status: "upcoming",
+      },
+      {
+        dateStr: plannedPeriod || "Sowing Window",
+        title: `Sowing Window (${plannedSeason || "Planned Season"})`,
+        desc: `Sow ${cropName || "your planned crop"} at optimal spacing and apply basal fertilizer dose.`,
+        status: "upcoming",
+      },
+      {
+        dateStr: "15 Days After Sowing",
+        title: "Initial Emergence & Weed Inspection",
+        desc: "Verify germination uniformity and remove competing early weeds.",
+        status: "upcoming",
+      },
+    ];
+  })();
+
+  // Determine practical next action
+  const nextAction = (() => {
+    if (!profile) {
+      return {
+        title: "Complete your farm profile",
+        text: "Add your land size and active crop in onboarding to generate your personal crop calendar and next tasks.",
+        link: "/onboarding",
+        btnLabel: "Set up farm plan",
+      };
+    }
+    const nextTask = calendarTasks.find((t) => t.status === "next") || calendarTasks[1] || calendarTasks[0];
+    return {
+      title: nextTask ? nextTask.title : "Maintain regular field inspection",
+      text: nextTask ? `${nextTask.desc} (Target: ${nextTask.dateStr})` : "Check soil moisture and field borders.",
+      link: null,
+      btnLabel: null,
+    };
+  })();
+
   return (
-    <div className="min-h-screen bg-bg-light dark:bg-bg-dark text-stone-900 dark:text-stone-100 pt-28 pb-20 px-4 sm:px-6 lg:px-8 transition-colors duration-200">
-      <div className="max-w-7xl mx-auto space-y-10">
+    <div className="pt-24 sm:pt-28 pb-16 min-h-screen bg-[#FAF9F5] dark:bg-[#0b1410] text-stone-900 dark:text-stone-100 transition-colors">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-8">
 
-        {/* ── Welcome Header ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/80 dark:bg-stone-900/80 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-stone-200/80 dark:border-stone-800 shadow-soft flex flex-col md:flex-row md:items-center md:justify-between gap-6"
-        >
-          <div>
-            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 bg-emerald-100/70 dark:bg-emerald-950/50 px-3 py-1 rounded-full mb-3">
-              <Sparkles size={14} />
-              Agricultural Intelligence Center
+        {/* ── Welcome Greeting & Location ── */}
+        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-6 sm:p-8 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-3 py-1 rounded-full inline-block mb-2">
+                Farmer Dashboard
+              </span>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900 dark:text-white">
+                Welcome back, {farmerName}
+              </h1>
+              <p className="text-sm text-stone-600 dark:text-stone-400 flex items-center gap-1.5 mt-1">
+                <MapPin size={14} className="text-emerald-700 shrink-0" />
+                <span>{locationText}</span>
+              </p>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-stone-900 dark:text-white">
-              {t("dashboard.good_morning")} 👋
-            </h1>
-            <p className="text-stone-500 dark:text-stone-400 mt-1 flex items-center gap-2 text-sm">
-              <Calendar size={15} />
-              <span>{today}</span>
-              <span className="text-stone-300 dark:text-stone-700">•</span>
-              <span>Let's make today's farming decisions smarter.</span>
-            </p>
-          </div>
 
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 px-3.5 py-2 rounded-xl border border-amber-200 dark:border-amber-800/60 shadow-xs flex items-center gap-2">
-              <ShieldCheck size={16} className="text-amber-600" />
-              <span>{t("dashboard.demo_view")}</span>
-            </span>
-
-            <Link
-              to="/user-dashboard"
-              className="inline-flex items-center gap-2 bg-emerald-800 hover:bg-emerald-900 text-white px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow-md shadow-emerald-900/10 transition"
-            >
-              <span>Farmer Profile</span>
-              <ArrowRight size={14} />
-            </Link>
-          </div>
-        </motion.div>
-
-        {/* ── Weather & Real-time Field Advisories ── */}
-        <div className="grid lg:grid-cols-12 gap-6">
-
-          {/* Weather card */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="lg:col-span-5 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-card p-6 sm:p-7"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-700 dark:text-emerald-400">
-                  <CloudRain size={20} />
-                </div>
-                <div>
-                  <h2 className="font-extrabold text-base text-stone-900 dark:text-white">
-                    {t("dashboard.weather")}
-                  </h2>
-                  <p className="text-[11px] text-stone-400 dark:text-stone-500">
-                    Bhopal Region • Live IMD Simulation
-                  </p>
-                </div>
+            {profile ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700">
+                  {profile.farmLocation?.farmSize || "2"} {profile.farmLocation?.measurementUnit || "Acres"}
+                </span>
+                <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 capitalize">
+                  {profile.farmLocation?.soilType || "Alluvial"} Soil
+                </span>
+                <Link
+                  to="/onboarding"
+                  className="text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:underline px-2 py-1"
+                >
+                  Update profile
+                </Link>
               </div>
-              <span className="text-[11px] text-emerald-800 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/50 px-2.5 py-1 rounded-full font-bold">
-                Optimal
+            ) : (
+              <Link
+                to="/onboarding"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-800 text-white font-bold text-sm shadow-sm hover:bg-emerald-900"
+              >
+                <span>Complete Onboarding</span>
+                <ArrowRight size={15} />
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* ── Practical Next Action Banner ── */}
+        <div className="bg-emerald-900 text-white rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-emerald-800 flex items-center justify-center shrink-0 mt-0.5">
+              <CheckCircle2 size={20} className="text-emerald-300" />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-emerald-200">
+                Recommended Next Action
+              </p>
+              <h2 className="text-base sm:text-lg font-bold text-white mt-0.5">
+                {nextAction.title}
+              </h2>
+              <p className="text-xs sm:text-sm text-emerald-100/90 mt-1 leading-relaxed">
+                {nextAction.text}
+              </p>
+            </div>
+          </div>
+
+          {nextAction.link && (
+            <Link
+              to={nextAction.link}
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white text-emerald-950 font-bold text-xs sm:text-sm hover:bg-emerald-50 shrink-0"
+            >
+              <span>{nextAction.btnLabel}</span>
+              <ArrowRight size={15} />
+            </Link>
+          )}
+        </div>
+
+        {/* ── Crop Plan Summary Card ── */}
+        {profile ? (
+          <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-6 sm:p-7 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
+              <div className="flex items-center gap-2">
+                <Sprout className="h-5 w-5 text-emerald-700" />
+                <h3 className="font-extrabold text-base sm:text-lg text-stone-900 dark:text-white">
+                  Current Crop Plan
+                </h3>
+              </div>
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
+                {isCultivating ? "Active Crop" : "Planned Season"}
               </span>
             </div>
 
-            <p className="text-xs text-stone-500 dark:text-stone-400 mb-6">
-              {t("dashboard.weather_note")}
-            </p>
-
-            <div className="grid grid-cols-2 gap-3.5">
-              {[
-                { icon: Thermometer, label: "Temperature", value: "28°C", sub: "Warm & Clear", color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
-                { icon: Droplets, label: "Humidity", value: "72%", sub: "Healthy level", color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
-                { icon: CloudRain, label: "Rainfall", value: "4 mm", sub: "Light expected", color: "text-indigo-600", bg: "bg-indigo-50 dark:bg-indigo-950/30" },
-                { icon: Wind, label: "Wind Speed", value: "14 km/h", sub: "Gentle breeze", color: "text-teal-600", bg: "bg-teal-50 dark:bg-teal-950/30" },
-              ].map((w, i) => {
-                const Icon = w.icon;
-                return (
-                  <div key={i} className={`p-4 rounded-2xl ${w.bg} border border-stone-200/40 dark:border-stone-800/60`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold text-stone-600 dark:text-stone-400">{w.label}</span>
-                      <Icon size={16} className={w.color} />
-                    </div>
-                    <p className={`text-xl font-extrabold ${w.color}`}>{w.value}</p>
-                    <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">{w.sub}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </motion.div>
-
-          {/* Smart Alerts */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="lg:col-span-7 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-card p-6 sm:p-7 flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center text-amber-700 dark:text-amber-400">
-                    <Bell size={20} />
-                  </div>
-                  <div>
-                    <h2 className="font-extrabold text-base text-stone-900 dark:text-white">
-                      {t("dashboard.alerts")}
-                    </h2>
-                    <p className="text-[11px] text-stone-400 dark:text-stone-500">
-                      Real-time agronomic triggers for field management
-                    </p>
-                  </div>
-                </div>
-                <span className="text-[11px] text-amber-800 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-950/50 px-2.5 py-1 rounded-full font-bold">
-                  3 Active
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/50">
+                <span className="text-[11px] font-semibold text-stone-500 uppercase block">Crop</span>
+                <span className="font-bold text-base text-stone-900 dark:text-white block mt-0.5 capitalize">
+                  {cropName || "Not specified"}
                 </span>
               </div>
 
-              <div className="space-y-3 pt-2">
-                {alerts.map((alert, i) => (
-                  <div
-                    key={i}
-                    className={`border-l-4 px-4 py-3.5 rounded-2xl text-sm ${alertStyles[alert.type]} shadow-xs`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-2.5">
-                        <span className="text-base select-none">{alertIcons[alert.type]}</span>
-                        <p className="font-medium text-xs sm:text-sm leading-snug">
-                          {t(alert.messageKey, { defaultValue: "Field conditions verified for upcoming cycle." })}
-                        </p>
-                      </div>
-                      <span className="text-[10px] font-bold opacity-60 shrink-0">
-                        {t(alert.timeKey, { defaultValue: "Recent" })}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+              <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/50">
+                <span className="text-[11px] font-semibold text-stone-500 uppercase block">
+                  {isCultivating ? "Sowing Date" : "Planned Period"}
+                </span>
+                <span className="font-bold text-sm sm:text-base text-stone-900 dark:text-white block mt-0.5">
+                  {isCultivating ? rawSowingDate || "Recorded" : plannedPeriod || "Upcoming"}
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/50">
+                <span className="text-[11px] font-semibold text-stone-500 uppercase block">Irrigation Source</span>
+                <span className="font-bold text-sm sm:text-base text-stone-900 dark:text-white block mt-0.5 capitalize">
+                  {profile.farmLocation?.irrigationSource || "Borewell / Rainfed"}
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/50">
+                <span className="text-[11px] font-semibold text-stone-500 uppercase block">Water Status</span>
+                <span className="font-bold text-sm sm:text-base text-stone-900 dark:text-white block mt-0.5 capitalize">
+                  {profile.farmLocation?.waterAvailability || "Moderate"}
+                </span>
               </div>
             </div>
+          </div>
+        ) : (
+          <div className="bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-6 text-center">
+            <Sprout className="h-8 w-8 text-emerald-700 mx-auto mb-2" />
+            <h3 className="font-bold text-base text-stone-900 dark:text-white">No crop plan recorded yet</h3>
+            <p className="text-sm text-stone-600 dark:text-stone-400 mt-1 max-w-md mx-auto">
+              Complete onboarding to record your land size and crop plan, which will generate your personalized task schedule here.
+            </p>
+            <Link
+              to="/onboarding"
+              className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-800 text-white font-bold text-sm"
+            >
+              <span>Start Onboarding</span>
+              <ArrowRight size={15} />
+            </Link>
+          </div>
+        )}
 
-            <div className="mt-6 pt-4 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-xs text-stone-500 dark:text-stone-400">
-              <span className="flex items-center gap-1.5 font-medium">
-                <CheckCircle2 size={15} className="text-emerald-600" />
-                Alerts personalized to your soil readings
-              </span>
-              <Link to="/features/irrigation" className="font-bold text-emerald-800 dark:text-emerald-400 hover:underline">
-                View Irrigation Status →
-              </Link>
+        {/* ── Crop Calendar & Milestone Tasks ── */}
+        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-6 sm:p-7 shadow-xs space-y-5">
+          <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-emerald-700" />
+              <h3 className="font-extrabold text-base sm:text-lg text-stone-900 dark:text-white">
+                Crop Season Calendar
+              </h3>
             </div>
-          </motion.div>
-        </div>
-
-        {/* ── AI Tools Grid (4 Core + 3 Roadmap) ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
-            <div>
-              <h2 className="text-2xl font-extrabold text-stone-900 dark:text-white flex items-center gap-2">
-                <span>🌾</span>
-                <span>{t("dashboard.modules")}</span>
-              </h2>
-              <p className="text-stone-500 dark:text-stone-400 text-sm mt-0.5">
-                Select an intelligent advisor to run an instant analysis for your field.
-              </p>
-            </div>
-            <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-400 self-start sm:self-auto">
-              4 Live AI Models Ready
+            <span className="text-xs text-stone-500">
+              Stage-by-stage field tasks
             </span>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {modules.map((mod, i) => {
-              const Icon = mod.icon;
-              return (
-                <Link to={mod.link} key={i}>
-                  <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 p-5 hover:shadow-card hover:border-emerald-300 dark:hover:border-emerald-700 transition-all group h-full flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center group-hover:scale-105 transition-transform">
-                          <Icon size={24} className="text-emerald-700 dark:text-emerald-400" />
-                        </div>
-                        {mod.status === "live" ? (
-                          <span className="text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-300 px-2.5 py-1 rounded-full">
-                            ✅ {t("common.live")}
-                          </span>
-                        ) : (
-                          <span className="text-[11px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 px-2.5 py-1 rounded-full">
-                            🔧 {t("common.coming_soon")}
-                          </span>
-                        )}
-                      </div>
-
-                      <h3 className="font-extrabold text-stone-900 dark:text-white text-base mb-1.5 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">
-                        {t(`modules.${mod.titleKey}`, { defaultValue: mod.titleKey })}
-                      </h3>
-
-                      <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
-                        {t(`modules.${mod.descKey}`, { defaultValue: "Intelligent farming advisor." })}
-                      </p>
-                    </div>
-
-                    <div className="mt-5 pt-3 border-t border-stone-100 dark:border-stone-800/60 flex items-center justify-between text-xs font-bold text-emerald-800 dark:text-emerald-400">
-                      <span>{t("common.open", { defaultValue: "Launch tool" })}</span>
-                      <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </motion.div>
-
-        {/* ── Price Trend Chart ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-card p-6 sm:p-8"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/50 flex items-center justify-center text-teal-700 dark:text-teal-400">
-                <BarChart2 size={20} />
-              </div>
-              <div>
-                <h2 className="font-extrabold text-lg text-stone-900 dark:text-white">
-                  {t("dashboard.price_trends")}
-                </h2>
-                <p className="text-xs text-stone-500 dark:text-stone-400">
-                  {t("dashboard.price_note")}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 self-start sm:self-auto">
-              <span className="text-xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 px-3 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800/60">
-                📊 {t("dashboard.simulated_data")}
-              </span>
-              <Link
-                to="/features/price-prediction"
-                className="text-xs font-bold text-emerald-800 dark:text-emerald-400 hover:underline px-2 py-1"
-              >
-                Forecast Tomorrow →
-              </Link>
-            </div>
-          </div>
-
-          <div className="h-72 mt-6">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={priceData}>
-                <defs>
-                  <linearGradient id="wheatGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#d97706" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#d97706" stopOpacity={0.0} />
-                  </linearGradient>
-                  <linearGradient id="riceGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2d6a4f" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#2d6a4f" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.6} />
-                <XAxis dataKey="month" stroke="#9ca3af" fontSize={12} />
-                <YAxis stroke="#9ca3af" fontSize={12} />
-                <Tooltip
-                  formatter={(val) => [`₹${val} / Quintal`, ""]}
-                  contentStyle={{
-                    backgroundColor: "#1c1917",
-                    borderRadius: "16px",
-                    border: "none",
-                    color: "#fff",
-                    fontSize: "12px",
-                    boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3)",
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="wheat"
-                  stroke="#d97706"
-                  strokeWidth={2.5}
-                  fillOpacity={1}
-                  fill="url(#wheatGrad)"
-                  name="Wheat (Mandi avg)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="rice"
-                  stroke="#2d6a4f"
-                  strokeWidth={2.5}
-                  fillOpacity={1}
-                  fill="url(#riceGrad)"
-                  name="Rice (Paddy)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="flex flex-wrap gap-8 mt-5 justify-center text-xs font-semibold text-stone-600 dark:text-stone-400">
-            <span className="flex items-center gap-2">
-              <span className="w-3.5 h-3.5 rounded-full bg-amber-600 inline-block" />
-              Wheat Mandi Price (₹/Quintal)
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="w-3.5 h-3.5 rounded-full bg-emerald-700 inline-block" />
-              Rice (Paddy) Mandi Price (₹/Quintal)
-            </span>
-          </div>
-        </motion.div>
-
-        {/* ── Impact Banner (NGO Presentation Ready) ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="bg-gradient-to-br from-emerald-900 via-emerald-800 to-stone-900 rounded-3xl p-8 sm:p-10 text-white shadow-card relative overflow-hidden"
-        >
-          <div className="absolute right-0 top-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-
-          <p className="text-center text-emerald-300 text-xs font-bold uppercase tracking-widest mb-6">
-            🎯 {t("dashboard.goals")}
-          </p>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center relative z-10">
-            {stats.map((stat, i) => (
-              <div key={i} className="p-3">
-                <div className="text-3xl sm:text-4xl font-black text-emerald-300 mb-1">
-                  {stat.value}
+          <div className="divide-y divide-stone-100 dark:divide-stone-800">
+            {calendarTasks.map((task, i) => (
+              <div key={i} className="py-3.5 first:pt-0 last:pb-0 flex items-start gap-3.5">
+                <div className="mt-1">
+                  {task.status === "done" ? (
+                    <CheckCircle2 size={18} className="text-emerald-700 shrink-0" />
+                  ) : task.status === "next" ? (
+                    <Clock size={18} className="text-amber-600 shrink-0 animate-pulse" />
+                  ) : (
+                    <div className="w-4 h-4 rounded-full border-2 border-stone-300 dark:border-stone-600 shrink-0" />
+                  )}
                 </div>
-                <div className="text-white font-extrabold text-sm mb-1">
-                  {stat.subtitle}
-                </div>
-                <div className="text-emerald-200/70 text-xs font-medium">
-                  {t(`stats.${stat.labelKey}`, { defaultValue: "Measurable Impact" })}
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                    <h4 className="font-bold text-sm sm:text-base text-stone-900 dark:text-white">
+                      {task.title}
+                    </h4>
+                    <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 whitespace-nowrap">
+                      {task.dateStr}
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300 mt-0.5 leading-relaxed">
+                    {task.desc}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
+
+        {/* ── Seven-Day Weather Section (Open-Meteo Integration) ── */}
+        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-6 sm:p-7 shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
+            <div className="flex items-center gap-2">
+              <CloudRain className="h-5 w-5 text-sky-700" />
+              <h3 className="font-extrabold text-base sm:text-lg text-stone-900 dark:text-white">
+                7-Day Local Weather Forecast
+              </h3>
+            </div>
+            <span className="text-xs font-semibold text-stone-500">
+              {weatherState.data?.locationName || districtName}
+            </span>
+          </div>
+
+          {weatherState.loading && (
+            <div className="py-10 text-center text-stone-500 flex items-center justify-center gap-2">
+              <Loader2 size={18} className="animate-spin text-emerald-700" />
+              <span className="text-sm font-medium">Checking weather forecast for {districtName}...</span>
+            </div>
+          )}
+
+          {weatherState.error && (
+            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-amber-900 dark:text-amber-200 text-xs sm:text-sm flex items-start gap-2.5">
+              <AlertCircle size={16} className="shrink-0 mt-0.5 text-amber-700" />
+              <div>
+                <p className="font-semibold">Weather service status</p>
+                <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">{weatherState.error}</p>
+              </div>
+            </div>
+          )}
+
+          {weatherState.data?.days && (
+            <div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5">
+                {weatherState.data.days.slice(0, 7).map((day, idx) => {
+                  const dateObj = new Date(day.date);
+                  const isToday = idx === 0;
+                  const dayLabel = isToday
+                    ? "Today"
+                    : dateObj.toLocaleDateString("en-US", { weekday: "short" });
+                  const dateLabel = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+                  return (
+                    <div
+                      key={day.date}
+                      className={`p-3 rounded-2xl border text-center transition-colors ${
+                        isToday
+                          ? "bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800"
+                          : "bg-stone-50 dark:bg-stone-800/40 border-stone-200/70 dark:border-stone-800"
+                      }`}
+                    >
+                      <span className="text-xs font-bold text-stone-800 dark:text-stone-200 block">
+                        {dayLabel}
+                      </span>
+                      <span className="text-[11px] text-stone-400 block mb-2">
+                        {dateLabel}
+                      </span>
+
+                      <div className="my-1">
+                        <span className="font-extrabold text-base text-stone-900 dark:text-white block">
+                          {day.temp_max_c != null ? `${Math.round(day.temp_max_c)}°C` : "—"}
+                        </span>
+                        <span className="text-[11px] text-stone-500 dark:text-stone-400 block">
+                          Low: {day.temp_min_c != null ? `${Math.round(day.temp_min_c)}°C` : "—"}
+                        </span>
+                      </div>
+
+                      <div className="mt-2 pt-1.5 border-t border-stone-200/50 dark:border-stone-700/50 text-[11px] text-sky-700 dark:text-sky-300 font-semibold flex items-center justify-center gap-1">
+                        <Droplets size={12} />
+                        <span>{day.rainfall_mm != null ? `${day.rainfall_mm} mm rain` : "Rain —"}</span>
+                      </div>
+                      <div className="mt-1 text-[11px] text-stone-500 dark:text-stone-400">
+                        {day.humidity_percent != null ? `${Math.round(day.humidity_percent)}% humidity` : "Humidity —"}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <p className="text-[11px] text-stone-400 dark:text-stone-500 mt-3 text-right">
+                Live daily forecast provided via Open-Meteo.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* ── Working Features Jump Cards ── */}
+        <div>
+          <h3 className="font-extrabold text-base sm:text-lg text-stone-900 dark:text-white mb-4">
+            Preserved Working Tools
+          </h3>
+
+          <div className="grid sm:grid-cols-3 gap-4">
+            <Link
+              to="/features/market-intelligence"
+              className="bg-white dark:bg-stone-900 p-5 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-xs hover:border-emerald-600 transition-colors group flex flex-col justify-between"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 flex items-center justify-center mb-3">
+                  <LineChart size={20} />
+                </div>
+                <h4 className="font-bold text-base text-stone-900 dark:text-white group-hover:text-emerald-700 transition-colors">
+                  Live Mandi Prices
+                </h4>
+                <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed">
+                  Daily AGMARKNET prices, arrivals, and price forecasts for nearby mandis.
+                </p>
+              </div>
+              <div className="mt-4 pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                <span>View prices</span>
+                <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+
+            <Link
+              to="/features/schemes"
+              className="bg-white dark:bg-stone-900 p-5 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-xs hover:border-emerald-600 transition-colors group flex flex-col justify-between"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 flex items-center justify-center mb-3">
+                  <Landmark size={20} />
+                </div>
+                <h4 className="font-bold text-base text-stone-900 dark:text-white group-hover:text-emerald-700 transition-colors">
+                  Government Schemes
+                </h4>
+                <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed">
+                  Direct eligibility matcher for PM-KISAN, PMFBY crop insurance, and KCC credit.
+                </p>
+              </div>
+              <div className="mt-4 pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                <span>Check eligibility</span>
+                <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+
+            <Link
+              to="/marketplace"
+              className="bg-white dark:bg-stone-900 p-5 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-xs hover:border-emerald-600 transition-colors group flex flex-col justify-between"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 flex items-center justify-center mb-3">
+                  <Store size={20} />
+                </div>
+                <h4 className="font-bold text-base text-stone-900 dark:text-white group-hover:text-emerald-700 transition-colors">
+                  Farmer Marketplace
+                </h4>
+                <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed">
+                  Browse crop listings from fellow farmers or list your own harvest with quality grading.
+                </p>
+              </div>
+              <div className="mt-4 pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                <span>Open marketplace</span>
+                <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+          </div>
+        </div>
 
       </div>
     </div>
   );
-}
+}

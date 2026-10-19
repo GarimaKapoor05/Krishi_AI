@@ -257,6 +257,23 @@ export function Step4Review({
                   )}
                 </div>
               </div>
+              {profile.planningFarming.cropRecommendation && (
+                <div className="col-span-2 sm:col-span-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                  <span className="text-stone-500 block text-xs font-medium">Model shortlist</span>
+                  <span className="font-bold capitalize text-emerald-950">
+                    {profile.planningFarming.cropRecommendation.recommended_crop}
+                  </span>
+                  <span className="ml-2 text-xs text-stone-600">
+                    {profile.planningFarming.cropRecommendation.confidence}% model score · weather for {profile.planningFarming.cropRecommendation.weather_location}
+                  </span>
+                </div>
+              )}
+              {profile.planningFarming.primaryCrop && (
+                <div className="col-span-2 sm:col-span-4">
+                  <span className="text-stone-400 block font-medium">Crop selected for your plan</span>
+                  <span className="font-bold capitalize text-stone-800">{profile.planningFarming.primaryCrop}</span>
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
@@ -322,7 +339,7 @@ export function Step4Review({
               className="mt-1 w-4 h-4 rounded text-brand-green focus:ring-brand-emerald border-stone-300"
             />
             <span className="text-xs text-stone-700 leading-normal font-medium">
-              I confirm that the information above is accurate to the best of my knowledge. I understand that this preview saves my farm profile in this browser and does not yet provide AI recommendations.
+              I confirm that the information above is accurate to the best of my knowledge. My farm profile is saved in this browser. Crop suggestions, if generated, are preliminary model estimates and are not a guarantee of seasonal suitability.
             </span>
           </label>
           {validationError && (

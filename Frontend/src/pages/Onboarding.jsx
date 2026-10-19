@@ -75,6 +75,7 @@ export default function Onboarding() {
               farmingStatus={flow.profile.farmingStatus}
               activeFarming={flow.profile.activeFarming}
               planningFarming={flow.profile.planningFarming}
+              farmLocation={flow.profile.farmLocation}
               onStatusChange={(status) => flow.updateField("farmingStatus", status)}
               onActiveChange={(updates) => flow.updateSection("activeFarming", updates)}
               onPlanningChange={(updates) => flow.updateSection("planningFarming", updates)}

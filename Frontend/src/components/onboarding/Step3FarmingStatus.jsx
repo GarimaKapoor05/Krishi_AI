@@ -21,11 +21,13 @@ import {
   FARMING_SEASONS,
   WATER_AVAILABILITY
 } from "../../data/onboardingConstants";
+import { CropRecommendationPanel } from "./CropRecommendationPanel";
 
 export function Step3FarmingStatus({
   farmingStatus,
   activeFarming,
   planningFarming,
+  farmLocation,
   onStatusChange,
   onActiveChange,
   onPlanningChange,
@@ -94,6 +96,13 @@ export function Step3FarmingStatus({
   const removePhoto = () => {
     setPhotoPreview(null);
     onPlanningChange({ soilPhoto: null });
+  };
+
+  const updateSoilNutrient = (key, value) => {
+    onPlanningChange({
+      soilNutrients: { ...planningFarming.soilNutrients, [key]: value },
+      cropRecommendation: null,
+    });
   };
 
   return (
@@ -437,12 +446,7 @@ export function Step3FarmingStatus({
                       placeholder="e.g. 50"
                       value={planningFarming.soilNutrients?.nitrogen || ""}
                       onChange={(e) =>
-                        onPlanningChange({
-                          soilNutrients: {
-                            ...planningFarming.soilNutrients,
-                            nitrogen: e.target.value
-                          }
-                        })
+                        updateSoilNutrient("nitrogen", e.target.value)
                       }
                       className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-stone-300 outline-none focus:border-brand-green"
                     />
@@ -456,12 +460,7 @@ export function Step3FarmingStatus({
                       placeholder="e.g. 35"
                       value={planningFarming.soilNutrients?.phosphorus || ""}
                       onChange={(e) =>
-                        onPlanningChange({
-                          soilNutrients: {
-                            ...planningFarming.soilNutrients,
-                            phosphorus: e.target.value
-                          }
-                        })
+                        updateSoilNutrient("phosphorus", e.target.value)
                       }
                       className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-stone-300 outline-none focus:border-brand-green"
                     />
@@ -475,12 +474,7 @@ export function Step3FarmingStatus({
                       placeholder="e.g. 40"
                       value={planningFarming.soilNutrients?.potassium || ""}
                       onChange={(e) =>
-                        onPlanningChange({
-                          soilNutrients: {
-                            ...planningFarming.soilNutrients,
-                            potassium: e.target.value
-                          }
-                        })
+                        updateSoilNutrient("potassium", e.target.value)
                       }
                       className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-stone-300 outline-none focus:border-brand-green"
                     />
@@ -495,12 +489,7 @@ export function Step3FarmingStatus({
                       placeholder="e.g. 6.8"
                       value={planningFarming.soilNutrients?.ph || ""}
                       onChange={(e) =>
-                        onPlanningChange({
-                          soilNutrients: {
-                            ...planningFarming.soilNutrients,
-                            ph: e.target.value
-                          }
-                        })
+                        updateSoilNutrient("ph", e.target.value)
                       }
                       className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-stone-300 outline-none focus:border-brand-green"
                     />
@@ -508,6 +497,14 @@ export function Step3FarmingStatus({
                 </div>
               )}
             </div>
+
+            <CropRecommendationPanel
+              farmLocation={farmLocation}
+              soilNutrients={planningFarming.soilNutrients}
+              soilTestDone={planningFarming.soilTestDone}
+              onRecommendation={(cropRecommendation) => onPlanningChange({ cropRecommendation })}
+              onSelectCrop={(primaryCrop) => onPlanningChange({ primaryCrop })}
+            />
 
             {/* Crops farmer is interested in */}
             <div>
