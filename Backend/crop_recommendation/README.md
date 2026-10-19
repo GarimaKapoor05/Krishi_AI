@@ -6,9 +6,10 @@ advice for the recommended crop.
 
 ## What is this, in simple terms?
 
-It's the "brain" for the Crop Recommendation feature. You give it some
-soil and weather numbers, and it tells you the best crop to grow — like
-a smart calculator trained on real farming data.
+It is a machine-learning shortlist, not a guarantee of the best crop. It
+uses soil test values and climate inputs to rank crops represented in its
+training data. Ask a local agricultural expert before making a planting
+decision.
 
 **How does it work?**
 A model was trained on data from 22 different crops (rice, maize, cotton,
@@ -16,8 +17,9 @@ banana, etc.), where each crop has a typical "comfort zone" — its own
 ideal range of soil nutrients, temperature, humidity, pH, and rainfall.
 It learned the patterns from 2,200 examples, so when you give it new
 numbers, it compares them against everything it learned and says "this
-looks most like rice" or "this looks most like cotton," with a
-confidence score. It's right about 99.5% of the time on test data.
+looks most like rice" or "this looks most like cotton." The reported test
+score is a held-out split of this dataset; it does not measure accuracy on
+every farm or prove yield outcomes.
 
 **What does it need as input?** 7 numbers:
 1. Nitrogen (N) — soil nutrient
@@ -52,8 +54,9 @@ below.
 
 | File                        | Purpose                                                            |
 |-----------------------------|---------------------------------------------------------------------|
-| `Crop_recommendation.csv`   | Training dataset — 2200 rows, 22 crops, 7 features                |
-| `generate_dataset.py`       | Regenerates the dataset from agronomic profile ranges (optional)   |
+| `Crop_recommendation.csv`   | Kaggle Crop Recommendation dataset — 2200 rows, 22 crops            |
+| `Crop_recommendation_synthetic.csv` | Locally generated example data; not used to train the shipped model |
+| `generate_dataset.py`       | Regenerates only the synthetic example dataset                     |
 | `train_model.py`            | Trains the Random Forest model, saves it + scaler + encoder       |
 | `fertilizer_advisor.py`     | Rule-based N-P-K gap analysis -> fertilizer suggestions            |
 | `predict_crop.py`           | Main script — run this for predictions                            |
@@ -65,14 +68,22 @@ below.
 ## Quick start
 
 ```bash
-pip install scikit-learn pandas numpy joblib
+# From the repository root, use the backend environment:
+Backend\venv\Scripts\python.exe Backend\crop_recommendation\train_model.py
 
-# Manual entry (type in your own soil/weather values)
-python3 predict_crop.py
+# Or from this folder, after installing the listed Python packages:
+python train_model.py
 
-# Demo mode — instant, auto-fills a realistic sample (best for live demo)
+# Manual prediction (type in soil and climate values)
+python predict_crop.py
+
+# Demo prediction (samples a row from the training dataset)
 python3 predict_crop.py --demo
 ```
+
+The training script reads `Crop_recommendation.csv` beside itself and writes
+the model, encoders, scaler, and evaluation report to this folder. It does not
+read the synthetic example file.
 
 ## Using it from your dashboard (for Member 1 / web team)
 
@@ -108,14 +119,19 @@ to a frontend/API layer (Flask/FastAPI endpoint, for example).
   gives interpretable feature importances — easier to defend to judges
   than a black-box deep model for a 7-feature tabular problem
 
-## Honest note on the dataset
+## Dataset source and limitations
 
-This dataset was constructed from published agronomic requirement ranges
-for each crop (the same structure used by the well-known public Kaggle
-"Crop Recommendation Dataset" — N, P, K, temperature, humidity, ph,
-rainfall, label). If your team wants to swap in the original Kaggle
-CSV instead (same column structure), just replace `Crop_recommendation.csv`
-and rerun `train_model.py` — no other code changes needed.
+`Crop_recommendation.csv` is the 2,200-row, 22-crop Kaggle dataset by
+Atharva Ingle, mirrored in the repository history from a public CSV copy.
+The feature columns are `N`, `P`, `K`, `temperature`, `humidity`, `ph`,
+`rainfall`, and `label`. Do not run `generate_dataset.py` to replace this
+source file; the generator now writes `Crop_recommendation_synthetic.csv`.
+
+The dataset is a small, balanced recommendation dataset. Its train/test
+score should not be treated as measured farm-level accuracy. In the
+onboarding flow, N-P-K and pH must come from a soil test. Weather inputs are
+the next seven days for the farm location, so the output is shown as an
+early shortlist and not as seasonal suitability or a yield prediction.
 
 ## Extending this for the full pitch
 

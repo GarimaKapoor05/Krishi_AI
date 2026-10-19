@@ -5,6 +5,7 @@ ranges (N, P, K, temperature, humidity, ph, rainfall) for 22 common crops.
 standard public 'Crop_recommendation' dataset format used in most
 crop-recommendation hackathon projects.
 """
+import os
 import numpy as np
 import pandas as pd
 
@@ -51,6 +52,7 @@ for crop, (N, P, K, T, H, PH, R) in crop_profiles.items():
 
 df = pd.DataFrame(rows, columns=["N", "P", "K", "temperature", "humidity", "ph", "rainfall", "label"])
 df = df.sample(frac=1, random_state=42).reset_index(drop=True)  # shuffle
-df.to_csv("Crop_recommendation.csv", index=False)
+output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Crop_recommendation_synthetic.csv")
+df.to_csv(output_path, index=False)
 print(df.shape)
 print(df["label"].value_counts())

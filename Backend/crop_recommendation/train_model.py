@@ -9,6 +9,8 @@ Saves:
   - feature_scaler.joblib   (StandardScaler fit on training features)
   - model_report.txt        (accuracy + classification report, for your slide/demo)
 """
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 import joblib
@@ -17,11 +19,15 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
-df = pd.read_csv("Crop_recommendation.csv")
+MODULE_DIR = Path(__file__).resolve().parent
+DATA_PATH = MODULE_DIR / "Crop_recommendation.csv"
+df = pd.read_csv(DATA_PATH)
 
 FEATURES = ["N", "P", "K", "temperature", "humidity", "ph", "rainfall"]
 X = df[FEATURES]
 y = df["label"]
+if X.isnull().any().any() or y.isnull().any():
+    raise ValueError("Training data contains missing feature values or crop labels.")
 
 le = LabelEncoder()
 y_enc = le.fit_transform(y)
@@ -53,7 +59,7 @@ print(report)
 importances = pd.Series(model.feature_importances_, index=FEATURES).sort_values(ascending=False)
 print("Feature importances:\n", importances)
 
-with open("model_report.txt", "w") as f:
+with open(MODULE_DIR / "model_report.txt", "w", encoding="utf-8") as f:
     f.write(f"Crop Recommendation Model — Random Forest Classifier\n")
     f.write(f"Test Accuracy: {acc*100:.2f}%\n\n")
     f.write("Classification Report:\n")
@@ -61,8 +67,8 @@ with open("model_report.txt", "w") as f:
     f.write("\nFeature Importances:\n")
     f.write(importances.to_string())
 
-joblib.dump(model, "crop_model.joblib")
-joblib.dump(le, "label_encoder.joblib")
-joblib.dump(scaler, "feature_scaler.joblib")
+joblib.dump(model, MODULE_DIR / "crop_model.joblib")
+joblib.dump(le, MODULE_DIR / "label_encoder.joblib")
+joblib.dump(scaler, MODULE_DIR / "feature_scaler.joblib")
 
 print("\nSaved: crop_model.joblib, label_encoder.joblib, feature_scaler.joblib, model_report.txt")

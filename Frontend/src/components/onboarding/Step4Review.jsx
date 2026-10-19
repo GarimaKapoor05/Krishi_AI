@@ -264,7 +264,7 @@ export function Step4Review({
                     {profile.planningFarming.cropRecommendation.recommended_crop}
                   </span>
                   <span className="ml-2 text-xs text-stone-600">
-                    {profile.planningFarming.cropRecommendation.confidence}% model score · weather for {profile.planningFarming.cropRecommendation.weather_location}
+                    {profile.planningFarming.cropRecommendation.confidence}% dataset match · short-term weather for {profile.planningFarming.cropRecommendation.weather_location}; confirm seasonal suitability locally
                   </span>
                 </div>
               )}

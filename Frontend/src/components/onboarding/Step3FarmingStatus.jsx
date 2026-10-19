@@ -502,6 +502,8 @@ export function Step3FarmingStatus({
               farmLocation={farmLocation}
               soilNutrients={planningFarming.soilNutrients}
               soilTestDone={planningFarming.soilTestDone}
+              plannedSowingPeriod={planningFarming.plannedSowingPeriod}
+              farmingSeason={planningFarming.farmingSeason}
               onRecommendation={(cropRecommendation) => onPlanningChange({ cropRecommendation })}
               onSelectCrop={(primaryCrop) => onPlanningChange({ primaryCrop })}
             />
