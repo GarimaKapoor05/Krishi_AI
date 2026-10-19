@@ -257,16 +257,17 @@ def predict_irrigation():
             if prediction == 1
             else "No Irrigation Needed"
         )
-
-        urgency = (
-            "High"
-            if moisture < 25
-            else "Medium"
-        )
-
+        #FIX 4 : Urgency “Low” when no irrigation needed:
+        if prediction == 0:
+            urgency = "Low"
+        elif moisture < 25:
+            urgency = "High"
+        else:
+            urgency = "Medium"
+        #FIX 5: Water amount shown even when not needed
         return jsonify({
             "recommendation": recommendation,
-            "water_amount_mm": drip_water_need,
+            "water_amount_mm": drip_water_need if prediction == 1 else 0,
             "urgency": urgency,
             "advice": f"{crop_info}. Use drip irrigation for best efficiency.",
             "insights": [

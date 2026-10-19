@@ -26,16 +26,25 @@ def register():
     if User.query.filter_by(email=data['email']).first():
         return jsonify({"error": "User already exists"}), 400
 
+    # Check duplicate username
+    if User.query.filter_by(username=data['username']).first():
+        return jsonify({"error": "Username already taken"}), 400
+
+    # Role validation logic
     role = (data.get('role') or 'seller').strip().lower()
     if role not in VALID_ROLES:
         role = 'seller'
 
+    # Farm size parsing logic
+    farm_size_raw = data.get('farm_size')
+    farm_size = float(farm_size_raw) if farm_size_raw not in (None, '', 'null') else None
+
     user = User(
         username=data['username'],
         email=data['email'],
-        phone=data.get('phone'),
-        farm_size=data.get('farm_size'),
-        location=data.get('location'),
+        phone=data.get('phone') or None,
+        farm_size=farm_size,
+        location=data.get('location') or None,
         role=role
     )
     user.set_password(data['password'])

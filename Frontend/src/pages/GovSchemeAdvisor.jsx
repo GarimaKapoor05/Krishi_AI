@@ -29,11 +29,10 @@ const SCHEMES = [
     applyLink: "https://pmkisan.gov.in",
     documents: ["Aadhaar Card", "Bank Account (linked to Aadhaar)", "Land Records"],
     eligibility: (f) =>
-      f.landType !== "Leased" &&
-      parseFloat(f.landSize) <= 5 &&
+      f.landType === "Own" && //FIX 10
       parseInt(f.annualIncome) <= 200000,
     reason: (f) =>
-      `You own ${f.landSize} acres of land and your annual income qualifies you for direct income support of ₹6,000/year.`,
+      `You own farmland and your income suggests you are not an income tax payer, making you eligible for ₹6,000/year direct benefit transfer in 3 instalments.`,
   },
   {
     id: "pmfby",
@@ -130,8 +129,8 @@ const SCHEMES = [
     applyLink: "https://pgsindia-ncof.gov.in",
     documents: ["Aadhaar", "Land Records", "Group Formation Certificate"],
     eligibility: (f) =>
-      f.needsHelp.includes("Subsidy") &&
-      parseFloat(f.landSize) >= 1,
+      f.needsHelp.includes("Subsidy") ||
+      f.needsHelp.includes("Organic Farming"), //FIX 8
     reason: (f) =>
       `You have ${f.landSize} acres and need subsidy support. PKVY supports cluster-based organic farming with ₹50,000/hectare over 3 years.`,
   },
@@ -146,7 +145,7 @@ const SCHEMES = [
     icon: IndianRupee,
     applyLink: "https://dahd.gov.in",
     documents: ["Aadhaar", "Business Plan", "Bank Account", "Land/Shed Documents"],
-    eligibility: (f) => f.hasLivestock === "Yes",
+    eligibility: (f) => f.hasLivestock === "Yes" || f.needsHelp.includes("Livestock Support"), //FIX 9
     reason: (f) =>
       `You have livestock. AHIDF provides subsidised loans at 3% interest for dairy, poultry, and meat processing infrastructure.`,
   },
@@ -267,8 +266,9 @@ and which scheme is most urgent for their situation. Be specific, not generic.`;
           const data = await res.json();
           setAiExplanation(data.advice || "");
         }
+        // FIX 7: Show fallback message if AI fails
       } catch {
-        // AI layer is optional — fail silently, rule-based results still show
+        setAiExplanation("AI summary unavailable — scheme matches above are based on your profile.");
       }
       setAiLoading(false);
     }

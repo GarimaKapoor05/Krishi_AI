@@ -32,31 +32,33 @@ ORGANIC_NUTRIENT_CONTENT = {
 
 
 def calculate_dosage(nutrient_gap, land_area_ha, fertilizer_name, use_organic=False):
-    """
-    nutrient_gap: dict like {"N": 20, "P": 0, "K": 5}  -> kg/ha shortfall per nutrient
-    land_area_ha: farmer's land area in hectares
-    fertilizer_name: name of the chemical or organic fertilizer (must exist in the maps)
-    use_organic: if True, looks up ORGANIC_NUTRIENT_CONTENT instead
 
-    Returns: dict with total kg needed for the whole field, and per-nutrient breakdown
-    """
     content_map = ORGANIC_NUTRIENT_CONTENT if use_organic else FERTILIZER_NUTRIENT_CONTENT
     if fertilizer_name not in content_map:
         return {"error": f"Unknown fertilizer '{fertilizer_name}'. Available: {list(content_map.keys())}"}
 
     nutrient_content = content_map[fertilizer_name]
     breakdown = {}
-    max_kg_needed = 0
-
+    #FIX 2: Only calculate for nutrients that this fertilizer actually contains
     for nutrient, gap_per_ha in nutrient_gap.items():
         if gap_per_ha <= 0:
             continue
         content_pct = nutrient_content.get(nutrient, 0)
         if content_pct == 0:
-            continue  # this fertilizer doesn't supply this nutrient
+            continue
         kg_needed = (gap_per_ha * land_area_ha) / content_pct
         breakdown[nutrient] = round(kg_needed, 2)
-        max_kg_needed = max(max_kg_needed, kg_needed)
+
+# Use the PRIMARY nutrient's requirement only.
+# Primary = nutrient where this fertilizer has its highest content %.
+# e.g. DAP's primary nutrient is P (46%), not N (18%).
+# This prevents N-gap from inflating DAP quantity.
+    if breakdown:
+        primary_nutrient = max(
+            (n for n in breakdown if nutrient_content.get(n, 0) > 0),
+            key=lambda n: nutrient_content.get(n, 0)
+        )
+        max_kg_needed = breakdown[primary_nutrient]
 
     if not breakdown:
         return {
