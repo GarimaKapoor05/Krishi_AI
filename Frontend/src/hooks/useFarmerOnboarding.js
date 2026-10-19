@@ -8,6 +8,7 @@ import {
 import { saveFarmProfileLocally } from "../services/onboardingServices";
 
 const DRAFT_KEY = "krishi_frontend_onboarding_draft_v1";
+const PROFILE_KEY = "krishi_farm_profile_v2";
 
 function draftFromProfile(profile, step) {
   const planningFarming = { ...profile.planningFarming };
@@ -33,7 +34,7 @@ function draftFromProfile(profile, step) {
   };
 }
 
-export function useFarmerOnboarding({ createAccount, onAuthenticated }) {
+export function useFarmerOnboarding({ createAccount, onAuthenticated, editExistingProfile = false, isAuthenticated = false, authenticatedUser = null }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [profile, setProfile] = useState(createDefaultFarmProfile);
   const [errors, setErrors] = useState({});
@@ -46,6 +47,25 @@ export function useFarmerOnboarding({ createAccount, onAuthenticated }) {
 
   useEffect(() => {
     try {
+      if (editExistingProfile || isAuthenticated) {
+        const rawProfile = localStorage.getItem(PROFILE_KEY);
+        const saved = rawProfile ? JSON.parse(rawProfile) : null;
+        setProfile((initial) => ({
+          ...initial,
+          ...(saved || {}),
+          account: {
+            ...initial.account,
+            email: authenticatedUser?.email || "",
+            ...(saved?.account || {}),
+            password: "",
+            confirmPassword: ""
+          }
+        }));
+        setAccountCreated(true);
+        setCurrentStep(2);
+        return;
+      }
+
       const raw = localStorage.getItem(DRAFT_KEY);
       if (!raw) return;
       const saved = JSON.parse(raw);
@@ -64,7 +84,7 @@ export function useFarmerOnboarding({ createAccount, onAuthenticated }) {
     } catch {
       localStorage.removeItem(DRAFT_KEY);
     }
-  }, []);
+  }, [authenticatedUser?.email, editExistingProfile, isAuthenticated]);
 
   useEffect(() => {
     if (currentStep === 5) {

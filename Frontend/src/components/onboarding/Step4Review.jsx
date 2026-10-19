@@ -12,6 +12,13 @@ import {
 } from "lucide-react";
 import { SOIL_TYPES, IRRIGATION_SOURCES, FARMING_SEASONS } from "../../data/onboardingConstants";
 
+const formatPlannedDate = (value = "") => {
+  const date = new Date(`${value}T00:00:00`);
+  return value && !Number.isNaN(date.getTime())
+    ? date.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
+    : value || "Not set";
+};
+
 export function Step4Review({
   profile,
   onGoToStep,
@@ -264,7 +271,7 @@ export function Step4Review({
                     {profile.planningFarming.cropRecommendation.recommended_crop}
                   </span>
                   <span className="ml-2 text-xs text-stone-600">
-                    {profile.planningFarming.cropRecommendation.confidence}% dataset match · short-term weather for {profile.planningFarming.cropRecommendation.weather_location}; confirm seasonal suitability locally
+                    {profile.planningFarming.cropRecommendation.confidence}% dataset match · {profile.planningFarming.cropRecommendation.climate_seasons_used} historical seasons for {profile.planningFarming.cropRecommendation.weather_location}; confirm suitability locally
                   </span>
                 </div>
               )}
@@ -280,7 +287,7 @@ export function Step4Review({
               <div>
                 <span className="text-stone-400 block font-medium">Planned Sowing</span>
                 <span className="font-bold text-stone-800">
-                  {profile.planningFarming.plannedSowingPeriod}
+                  {formatPlannedDate(profile.planningFarming.plannedSowingPeriod)}
                 </span>
               </div>
               <div>

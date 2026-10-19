@@ -3,19 +3,16 @@ import { Link } from "react-router-dom";
 import {
   Calendar,
   CloudRain,
-  Thermometer,
   Sprout,
   CheckCircle2,
   AlertCircle,
   Clock,
   MapPin,
-  Ruler,
   Droplets,
   LineChart,
   Landmark,
   Store,
   ArrowRight,
-  User,
   Loader2,
   RefreshCw,
 } from "lucide-react";
@@ -32,6 +29,7 @@ export default function Dashboard() {
     data: null,
     error: null,
   });
+  const [weatherRetryCount, setWeatherRetryCount] = useState(0);
 
   // Load saved farm profile from onboarding
   useEffect(() => {
@@ -46,18 +44,18 @@ export default function Dashboard() {
   }, []);
 
   // Resolve the farm's actual district/state; never substitute a different city.
-  const accountLocation = (user?.location || "").split(",").map((part) => part.trim());
   const farmLocation = profile?.farmLocation?.district
     ? profile.farmLocation
-    : { district: accountLocation[0], state: accountLocation[1] };
-  const districtName = farmLocation.district || "your farm";
-  const weatherLocationKey = `${farmLocation.district || ""}|${farmLocation.state || ""}`;
+    : { district: "", state: "" };
+  const weatherDistrict = farmLocation.district;
+  const weatherStateName = farmLocation.state;
+  const districtName = weatherDistrict || "your farm";
 
   useEffect(() => {
     let isMounted = true;
     setWeatherState({ loading: true, data: null, error: null });
 
-    getFarmWeather(farmLocation)
+    getFarmWeather({ district: weatherDistrict, state: weatherStateName })
       .then((data) => {
         if (isMounted) {
           setWeatherState({
@@ -80,7 +78,7 @@ export default function Dashboard() {
     return () => {
       isMounted = false;
     };
-  }, [weatherLocationKey]);
+  }, [weatherDistrict, weatherStateName, weatherRetryCount]);
 
   // Farmer's name
   const farmerName =
@@ -106,112 +104,50 @@ export default function Dashboard() {
 
   const rawSowingDate = profile?.activeFarming?.sowingDate;
   const plannedPeriod = profile?.planningFarming?.plannedSowingPeriod;
-  const plannedSeason = profile?.planningFarming?.farmingSeason;
-
-  // Generate dated crop calendar tasks
+  // Starter check-ins are date reminders only, not crop-specific agronomic advice.
   const calendarTasks = (() => {
     if (!profile) return [];
 
-    if (isCultivating && rawSowingDate) {
-      const baseDate = new Date(rawSowingDate);
-      const isValid = !isNaN(baseDate.getTime());
+    const dateValue = isCultivating ? rawSowingDate : plannedPeriod;
+    if (!dateValue) return [];
+    const baseDate = new Date(`${dateValue}T00:00:00`);
+    if (Number.isNaN(baseDate.getTime())) return [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const steps = isCultivating
+      ? [
+          { offset: 0, title: "Sowing date recorded" },
+          { offset: 15, title: "Crop check-in" },
+          { offset: 30, title: "Crop check-in" },
+          { offset: 45, title: "Crop check-in" },
+          { offset: 60, title: "Crop check-in" },
+          { offset: 90, title: "Crop check-in" },
+          { offset: 120, title: "Crop check-in" },
+        ]
+      : [
+          { offset: -21, title: "Farm plan check-in" },
+          { offset: -14, title: "Inputs availability check" },
+          { offset: -7, title: "Pre-sowing check-in" },
+          { offset: 0, title: "Planned sowing date" },
+          { offset: 15, title: "Post-sowing check-in" },
+        ];
 
-      const addDays = (days) => {
-        if (!isValid) return `Day ${days}`;
-        const d = new Date(baseDate);
-        d.setDate(d.getDate() + days);
-        return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    let nextAssigned = false;
+    return steps.map(({ offset, title }) => {
+      const date = new Date(baseDate);
+      date.setDate(date.getDate() + offset);
+      const isPast = date < today;
+      const status = !isPast && !nextAssigned ? "next" : isPast ? "past" : "upcoming";
+      if (status === "next") nextAssigned = true;
+      return {
+        dateStr: date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+        title,
+        desc: isCultivating
+          ? "Record crop condition and questions for your next visit with a local agricultural adviser. Check-in timing is a reminder, not a crop treatment schedule."
+          : "Review your plan and local conditions with a trusted agricultural adviser. This reminder is not a recommendation to sow or apply inputs.",
+        status,
       };
-
-      const now = new Date();
-      const daysSinceSowing = isValid ? Math.floor((now - baseDate) / (1000 * 60 * 60 * 24)) : 0;
-
-      return [
-        {
-          dayOffset: 0,
-          dateStr: isValid ? baseDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Day 0",
-          title: "Sowing & Seed Treatment",
-          desc: "Complete primary seed treatment with bio-fungicide and sow seeds at recommended depth.",
-          status: daysSinceSowing >= 0 ? "done" : "upcoming",
-        },
-        {
-          dayOffset: 15,
-          dateStr: addDays(15),
-          title: "Seedling Emergence & Stand Check",
-          desc: "Inspect germination uniformity across rows. Provide a light irrigation if the topsoil has dried.",
-          status: daysSinceSowing >= 15 ? "done" : daysSinceSowing >= 0 ? "next" : "upcoming",
-        },
-        {
-          dayOffset: 30,
-          dateStr: addDays(30),
-          title: "Weeding & First Nutrient Dose",
-          desc: "Perform first intercultural weeding. Apply the planned first split of nitrogen / compost as required.",
-          status: daysSinceSowing >= 30 ? "done" : daysSinceSowing >= 15 ? "next" : "upcoming",
-        },
-        {
-          dayOffset: 45,
-          dateStr: addDays(45),
-          title: "Crown Root / Tillering Stage",
-          desc: "Assess tillering progress and maintain adequate root-zone soil moisture.",
-          status: daysSinceSowing >= 45 ? "done" : daysSinceSowing >= 30 ? "next" : "upcoming",
-        },
-        {
-          dayOffset: 60,
-          dateStr: addDays(60),
-          title: "Vegetative Growth & Pest Scouting",
-          desc: "Scout underside of leaves for early insect activity or fungal spots before flowering.",
-          status: daysSinceSowing >= 60 ? "done" : daysSinceSowing >= 45 ? "next" : "upcoming",
-        },
-        {
-          dayOffset: 90,
-          dateStr: addDays(90),
-          title: "Flowering & Grain Development",
-          desc: "Critical water demand stage. Ensure field does not face dry stress during grain formation.",
-          status: daysSinceSowing >= 90 ? "done" : daysSinceSowing >= 60 ? "next" : "upcoming",
-        },
-        {
-          dayOffset: 120,
-          dateStr: addDays(120),
-          title: "Physiological Maturity & Harvest",
-          desc: "Inspect grain hardness and moisture content (12-14%). Check nearby mandi prices before cutting.",
-          status: daysSinceSowing >= 120 ? "done" : daysSinceSowing >= 90 ? "next" : "upcoming",
-        },
-      ];
-    }
-
-    // Planning branch
-    return [
-      {
-        dateStr: "3 Weeks Before Sowing",
-        title: "Field Preparation & Deep Plowing",
-        desc: "Plow field and incorporate well-rotted farmyard manure (FYM) to improve moisture retention.",
-        status: "next",
-      },
-      {
-        dateStr: "2 Weeks Before Sowing",
-        title: "Seed Sourcing & Germination Test",
-        desc: "Procure certified high-yield seed varieties from registered cooperatives; test germination rate.",
-        status: "upcoming",
-      },
-      {
-        dateStr: "1 Week Before Sowing",
-        title: "Pre-sowing Irrigation (Paleva)",
-        desc: "Give a light irrigation to establish adequate soil moisture for uniform seed emergence.",
-        status: "upcoming",
-      },
-      {
-        dateStr: plannedPeriod || "Sowing Window",
-        title: `Sowing Window (${plannedSeason || "Planned Season"})`,
-        desc: `Sow ${cropName || "your planned crop"} at optimal spacing and apply basal fertilizer dose.`,
-        status: "upcoming",
-      },
-      {
-        dateStr: "15 Days After Sowing",
-        title: "Initial Emergence & Weed Inspection",
-        desc: "Verify germination uniformity and remove competing early weeds.",
-        status: "upcoming",
-      },
-    ];
+    });
   })();
 
   // Determine practical next action
@@ -224,10 +160,14 @@ export default function Dashboard() {
         btnLabel: "Set up farm plan",
       };
     }
-    const nextTask = calendarTasks.find((t) => t.status === "next") || calendarTasks[1] || calendarTasks[0];
+    const nextTask = calendarTasks.find((t) => t.status === "next");
     return {
-      title: nextTask ? nextTask.title : "Maintain regular field inspection",
-      text: nextTask ? `${nextTask.desc} (Target: ${nextTask.dateStr})` : "Check soil moisture and field borders.",
+      title: nextTask ? nextTask.title : calendarTasks.length ? "No upcoming check-ins" : "Add a crop date to your plan",
+      text: nextTask
+        ? `${nextTask.desc} (Reminder: ${nextTask.dateStr})`
+        : calendarTasks.length
+          ? "Your starter reminders have passed. Update your crop dates to create a current timeline."
+          : "Add a sowing or planting date to create starter reminders. Crop-specific advice is not available yet.",
       link: null,
       btnLabel: null,
     };
@@ -256,13 +196,17 @@ export default function Dashboard() {
             {profile ? (
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700">
-                  {profile.farmLocation?.farmSize || "2"} {profile.farmLocation?.measurementUnit || "Acres"}
+                  {profile.farmLocation?.farmSize
+                    ? `${profile.farmLocation.farmSize} ${profile.farmLocation.measurementUnit || "acres"}`
+                    : "Farm size not provided"}
                 </span>
                 <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 capitalize">
-                  {profile.farmLocation?.soilType || "Alluvial"} Soil
+                  {profile.farmLocation?.soilType && profile.farmLocation.soilType !== "unknown"
+                    ? `${profile.farmLocation.soilType} soil`
+                    : "Soil type not provided"}
                 </span>
                 <Link
-                  to="/onboarding"
+                  to="/onboarding?edit=1"
                   className="text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:underline px-2 py-1"
                 >
                   Update profile
@@ -288,7 +232,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-emerald-200">
-                Recommended Next Action
+                Next Farm Reminder
               </p>
               <h2 className="text-base sm:text-lg font-bold text-white mt-0.5">
                 {nextAction.title}
@@ -446,6 +390,13 @@ export default function Dashboard() {
               <div>
                 <p className="font-semibold">Weather service status</p>
                 <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">{weatherState.error}</p>
+                <button
+                  type="button"
+                  onClick={() => setWeatherRetryCount((count) => count + 1)}
+                  className="mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 dark:border-amber-800 dark:text-amber-200 dark:hover:bg-amber-900/40"
+                >
+                  <RefreshCw size={13} aria-hidden="true" /> Retry weather
+                </button>
               </div>
             </div>
           )}
@@ -499,7 +450,7 @@ export default function Dashboard() {
               </div>
 
               <p className="text-[11px] text-stone-400 dark:text-stone-500 mt-3 text-right">
-                Live daily forecast provided via Open-Meteo.
+                7-day forecast provided by Open-Meteo; conditions can change.
               </p>
             </div>
           )}

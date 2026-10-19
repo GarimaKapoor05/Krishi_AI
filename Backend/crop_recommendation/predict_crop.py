@@ -44,6 +44,11 @@ SCALER_PATH = os.path.join(_THIS_DIR, "feature_scaler.joblib")
 DATA_PATH = os.path.join(_THIS_DIR, "Crop_recommendation.csv")
 
 FEATURES = ["N", "P", "K", "temperature", "humidity", "ph", "rainfall"]
+_training_data = pd.read_csv(DATA_PATH)
+_TRAINING_RANGES = {
+    feature: (float(_training_data[feature].min()), float(_training_data[feature].max()))
+    for feature in FEATURES
+}
 
 _model = joblib.load(MODEL_PATH)
 _encoder = joblib.load(ENCODER_PATH)
@@ -55,7 +60,23 @@ def predict_crop(N, P, K, temperature, humidity, ph, rainfall, top_n=3):
     Returns the top_n predicted crops with confidence scores, plus a
     fertilizer suggestion for the top prediction.
     """
-    input_df = pd.DataFrame([[N, P, K, temperature, humidity, ph, rainfall]], columns=FEATURES)
+    values = {"N": N, "P": P, "K": K, "temperature": temperature, "humidity": humidity, "ph": ph, "rainfall": rainfall}
+    numeric_values = {}
+    for feature, value in values.items():
+        try:
+            numeric_values[feature] = float(value)
+        except (TypeError, ValueError):
+            raise ValueError(f"{feature} must be a number.") from None
+        if not np.isfinite(numeric_values[feature]):
+            raise ValueError(f"{feature} must be a finite number.")
+        minimum, maximum = _TRAINING_RANGES[feature]
+        if not minimum <= numeric_values[feature] <= maximum:
+            raise ValueError(
+                f"The model has no training examples for {feature} in this range "
+                f"({minimum:.2f}–{maximum:.2f}). No crop estimate was generated."
+            )
+
+    input_df = pd.DataFrame([[numeric_values[feature] for feature in FEATURES]], columns=FEATURES)
     input_scaled = _scaler.transform(input_df)
 
     probs = _model.predict_proba(input_scaled)[0]
@@ -67,13 +88,11 @@ def predict_crop(N, P, K, temperature, humidity, ph, rainfall, top_n=3):
     ]
 
     best_crop = top_predictions[0]["crop"]
-    fertilizer_info = recommend_fertilizer({"N": N, "P": P, "K": K}, best_crop, dataset_path=DATA_PATH)
+    fertilizer_info = recommend_fertilizer({"N": numeric_values["N"], "P": numeric_values["P"], "K": numeric_values["K"]}, best_crop, dataset_path=DATA_PATH)
 
     return {
         "input": {
-            "N": N, "P": P, "K": K,
-            "temperature": temperature, "humidity": humidity,
-            "ph": ph, "rainfall": rainfall
+            **numeric_values
         },
         "top_predictions": top_predictions,
         "recommended_crop": best_crop,

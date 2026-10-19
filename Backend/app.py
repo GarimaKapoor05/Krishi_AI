@@ -134,7 +134,13 @@ except Exception as e:
 def predict_crop_route():
 
     try:
-        data = request.json
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({"error": "Send crop inputs as a JSON object."}), 400
+        required = ("N", "P", "K", "temperature", "humidity", "ph", "rainfall")
+        missing = [field for field in required if field not in data]
+        if missing:
+            return jsonify({"error": f"Missing required crop inputs: {', '.join(missing)}."}), 400
 
         result = predict_crop(
             N=data["N"],
@@ -148,8 +154,11 @@ def predict_crop_route():
 
         return jsonify(result)
 
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        app.logger.exception("Crop recommendation failed")
+        return jsonify({"error": "The crop recommendation service encountered an error. Please try again later."}), 500
 
 
 # ====================== FERTILIZER PREDICTION ======================

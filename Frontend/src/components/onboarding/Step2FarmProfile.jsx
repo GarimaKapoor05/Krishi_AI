@@ -23,6 +23,7 @@ export function Step2FarmProfile({
   onChange,
   onNext,
   onPrev,
+  backLabel = "Back to Account",
   errors = {}
 }) {
   const handleSubmit = (e) => {
@@ -382,7 +383,7 @@ export function Step2FarmProfile({
             className="w-full sm:w-auto px-6 py-3 rounded-xl font-bold text-sm text-stone-700 bg-stone-100 hover:bg-stone-200 transition-colors flex items-center justify-center space-x-2"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Account</span>
+            <span>{backLabel}</span>
           </button>
 
           <div className="flex items-center space-x-3 w-full sm:w-auto">

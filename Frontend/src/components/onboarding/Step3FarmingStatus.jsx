@@ -63,13 +63,25 @@ export function Step3FarmingStatus({
     const current = planningFarming.interestedCrops || [];
     if (current.includes(crop)) {
       onPlanningChange({
-        interestedCrops: current.filter((c) => c !== crop)
+        interestedCrops: current.filter((c) => c !== crop),
+        ...(planningFarming.primaryCrop?.toLocaleLowerCase() === crop.toLocaleLowerCase()
+          ? { primaryCrop: "" }
+          : {})
       });
     } else {
       onPlanningChange({
         interestedCrops: [...current, crop]
       });
     }
+  };
+
+  const selectRecommendedCrop = (crop) => {
+    const current = planningFarming.interestedCrops || [];
+    const alreadyInterested = current.some((item) => item.toLocaleLowerCase() === crop.toLocaleLowerCase());
+    onPlanningChange({
+      primaryCrop: crop,
+      interestedCrops: alreadyInterested ? current : [...current, crop]
+    });
   };
 
   // Handle optional soil photo upload
@@ -128,11 +140,20 @@ export function Step3FarmingStatus({
             Have you already started growing a crop? <span className="text-red-500">*</span>
           </label>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4" role="radiogroup" aria-label="Current crop status">
             {/* Option A: Yes, I'm already farming */}
             <div
+              role="radio"
+              aria-checked={farmingStatus === "active"}
+              tabIndex={0}
               onClick={() => onStatusChange("active")}
-              className={`p-6 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col justify-between ${
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onStatusChange("active");
+                }
+              }}
+              className={`p-6 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col justify-between focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800 ${
                 farmingStatus === "active"
                   ? "border-brand-green bg-brand-mint/30 shadow-card ring-2 ring-brand-green/20"
                   : "border-brand-border bg-white hover:border-stone-400"
@@ -154,15 +175,24 @@ export function Step3FarmingStatus({
                   Option A — Yes, I'm already farming
                 </h3>
                 <p className="text-xs text-stone-600 leading-relaxed">
-                  I currently have crops standing in my field. I need stage-specific care, irrigation timing, and fertilizer dosage guidance.
+                  I currently have a crop in the field. I want to record its planting date, stage, and care history for my farm profile.
                 </p>
               </div>
             </div>
 
             {/* Option B: No, I'm planning to start */}
             <div
+              role="radio"
+              aria-checked={farmingStatus === "planning"}
+              tabIndex={0}
               onClick={() => onStatusChange("planning")}
-              className={`p-6 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col justify-between ${
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onStatusChange("planning");
+                }
+              }}
+              className={`p-6 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col justify-between focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800 ${
                 farmingStatus === "planning"
                   ? "border-brand-green bg-brand-mint/30 shadow-card ring-2 ring-brand-green/20"
                   : "border-brand-border bg-white hover:border-stone-400"
@@ -362,10 +392,10 @@ export function Step3FarmingStatus({
                   Planned Sowing Period <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="text"
-                  value={planningFarming.plannedSowingPeriod}
+                  type="date"
+                  min={new Date().toISOString().slice(0, 10)}
+                  value={/^\d{4}-\d{2}-\d{2}$/.test(planningFarming.plannedSowingPeriod || "") ? planningFarming.plannedSowingPeriod : ""}
                   onChange={(e) => onPlanningChange({ plannedSowingPeriod: e.target.value })}
-                  placeholder="e.g. Next 2 weeks, Mid-June, or October"
                   className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-all outline-none ${
                     errors.plannedSowingPeriod
                       ? "border-red-400 bg-red-50/30 focus:border-red-500"
@@ -375,6 +405,7 @@ export function Step3FarmingStatus({
                 {errors.plannedSowingPeriod && (
                   <p className="text-xs text-red-600 mt-1">{errors.plannedSowingPeriod}</p>
                 )}
+                <p className="mt-1 text-xs text-stone-500">Choose the planned sowing date. This helps place the plan on your crop calendar.</p>
               </div>
 
               <div>
@@ -436,15 +467,22 @@ export function Step3FarmingStatus({
               </div>
 
               {planningFarming.soilTestDone === "yes" && (
-                <div className="p-4 rounded-xl bg-white border border-brand-border grid grid-cols-2 sm:grid-cols-4 gap-3 animate-fade-in">
+                <div className="p-4 rounded-xl bg-white border border-brand-border animate-fade-in">
+                  <p className="mb-3 text-xs leading-relaxed text-stone-600">
+                    The experimental estimate needs all four values: N, P, K, and pH. The Kaggle dataset does not document NPK units or confirm equivalence with soil-lab methods, so do not enter values unless a soil professional confirms the scale is comparable. Do not enter or convert ppm values yourself. Missing any value? Skip the optional estimate.
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div>
                     <label className="block text-[11px] font-bold text-stone-600 mb-1">
-                      Nitrogen (N) kg/ha
+                      Nitrogen (N) value
                     </label>
                     <input
                       type="number"
+                      min="0"
+                      max="140"
+                      step="any"
                       placeholder="e.g. 50"
-                      value={planningFarming.soilNutrients?.nitrogen || ""}
+                      value={planningFarming.soilNutrients?.nitrogen ?? ""}
                       onChange={(e) =>
                         updateSoilNutrient("nitrogen", e.target.value)
                       }
@@ -453,12 +491,15 @@ export function Step3FarmingStatus({
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-stone-600 mb-1">
-                      Phosphorus (P) kg/ha
+                      Phosphorus (P) value
                     </label>
                     <input
                       type="number"
+                      min="5"
+                      max="145"
+                      step="any"
                       placeholder="e.g. 35"
-                      value={planningFarming.soilNutrients?.phosphorus || ""}
+                      value={planningFarming.soilNutrients?.phosphorus ?? ""}
                       onChange={(e) =>
                         updateSoilNutrient("phosphorus", e.target.value)
                       }
@@ -467,12 +508,15 @@ export function Step3FarmingStatus({
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-stone-600 mb-1">
-                      Potassium (K) kg/ha
+                      Potassium (K) value
                     </label>
                     <input
                       type="number"
+                      min="5"
+                      max="205"
+                      step="any"
                       placeholder="e.g. 40"
-                      value={planningFarming.soilNutrients?.potassium || ""}
+                      value={planningFarming.soilNutrients?.potassium ?? ""}
                       onChange={(e) =>
                         updateSoilNutrient("potassium", e.target.value)
                       }
@@ -485,14 +529,17 @@ export function Step3FarmingStatus({
                     </label>
                     <input
                       type="number"
-                      step="0.1"
+                      min="3.5"
+                      max="9.94"
+                      step="0.01"
                       placeholder="e.g. 6.8"
-                      value={planningFarming.soilNutrients?.ph || ""}
+                      value={planningFarming.soilNutrients?.ph ?? ""}
                       onChange={(e) =>
                         updateSoilNutrient("ph", e.target.value)
                       }
                       className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-stone-300 outline-none focus:border-brand-green"
                     />
+                  </div>
                   </div>
                 </div>
               )}
@@ -504,8 +551,9 @@ export function Step3FarmingStatus({
               soilTestDone={planningFarming.soilTestDone}
               plannedSowingPeriod={planningFarming.plannedSowingPeriod}
               farmingSeason={planningFarming.farmingSeason}
+              selectedCrop={planningFarming.primaryCrop}
               onRecommendation={(cropRecommendation) => onPlanningChange({ cropRecommendation })}
-              onSelectCrop={(primaryCrop) => onPlanningChange({ primaryCrop })}
+              onSelectCrop={selectRecommendedCrop}
             />
 
             {/* Crops farmer is interested in */}

@@ -154,8 +154,21 @@ export const validateStep3FarmingStatus = (status, activeFarming, planningFarmin
       errors.sowingDate = "Approximate sowing or planting date is required";
     }
   } else if (status === "planning") {
-    if (!planningFarming.plannedSowingPeriod?.trim()) {
-      errors.plannedSowingPeriod = "Please specify your planned sowing period";
+    const plannedDate = /^\d{4}-\d{2}-\d{2}$/.test(planningFarming.plannedSowingPeriod || "")
+      ? new Date(`${planningFarming.plannedSowingPeriod}T00:00:00`)
+      : null;
+    if (!plannedDate || Number.isNaN(plannedDate.getTime())) {
+      errors.plannedSowingPeriod = "Please choose a valid planned sowing date";
+    } else {
+      const seasonMonths = {
+        kharif: [6, 7, 8, 9, 10],
+        rabi: [10, 11, 12, 1, 2, 3],
+        zaid: [3, 4, 5, 6],
+        year_round: null,
+      }[planningFarming.farmingSeason];
+      if (seasonMonths && !seasonMonths.includes(plannedDate.getMonth() + 1)) {
+        errors.plannedSowingPeriod = "This date falls outside the selected season. Change the date or season.";
+      }
     }
     if (!planningFarming.farmingSeason?.trim()) {
       errors.farmingSeason = "Please select your planned farming season";

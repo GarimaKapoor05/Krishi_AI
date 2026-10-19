@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Sprout } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { ProgressSteps } from "../components/common/OnboardingProgressSteps";
@@ -13,10 +13,16 @@ import { createOnboardingAccount } from "../services/onboardingServices";
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const [searchParams] = useSearchParams();
+  const editExistingProfile = searchParams.get("edit") === "1";
+  const { login, isLoggedIn, user } = useAuth();
+  const profileMode = editExistingProfile || isLoggedIn;
   const flow = useFarmerOnboarding({
     createAccount: createOnboardingAccount,
-    onAuthenticated: login
+    onAuthenticated: login,
+    editExistingProfile,
+    isAuthenticated: isLoggedIn,
+    authenticatedUser: user
   });
 
   return (
@@ -47,7 +53,13 @@ export default function Onboarding() {
           )}
 
           {flow.currentStep < 5 && (
-            <ProgressSteps currentStep={flow.currentStep} onStepClick={flow.goToStep} />
+            <ProgressSteps
+              currentStep={flow.currentStep}
+              onStepClick={(step) => {
+                if (profileMode && step === 1) return;
+                flow.goToStep(step);
+              }}
+            />
           )}
 
           {flow.currentStep === 1 && (
@@ -66,7 +78,8 @@ export default function Onboarding() {
               farmLocation={flow.profile.farmLocation}
               onChange={(updates) => flow.updateSection("farmLocation", updates)}
               onNext={flow.nextStep}
-              onPrev={flow.prevStep}
+              onPrev={profileMode ? () => navigate("/dashboard") : flow.prevStep}
+              backLabel={profileMode ? "Back to dashboard" : "Back to Account"}
               errors={flow.errors}
             />
           )}

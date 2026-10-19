@@ -127,11 +127,25 @@ The feature columns are `N`, `P`, `K`, `temperature`, `humidity`, `ph`,
 `rainfall`, and `label`. Do not run `generate_dataset.py` to replace this
 source file; the generator now writes `Crop_recommendation_synthetic.csv`.
 
-The dataset is a small, balanced recommendation dataset. Its train/test
-score should not be treated as measured farm-level accuracy. In the
-onboarding flow, N-P-K and pH must come from a soil test. Weather inputs are
-the next seven days for the farm location, so the output is shown as an
-early shortlist and not as seasonal suitability or a yield prediction.
+The dataset is a small, balanced recommendation dataset. It has no farm,
+district, season, yield, or crop-outcome fields; the Kaggle metadata describes
+the rainfall feature as rainfall during the season, but does not define a
+consistent season length for each row. Its random train/test score is therefore
+not measured farm-level accuracy and cannot validate local yield or success.
+In onboarding, N-P-K and pH must come from a lab report and remain within the
+dataset's observed ranges. The public source does not establish that its N-P-K
+values are equivalent to every soil-health-card or laboratory method, so the
+UI requires matching kg/ha values and warns farmers to verify units with an
+expert; this mapping still needs agronomic confirmation. Temperature, humidity, and rainfall inputs are now
+calculated from the selected season's previous ten years of local weather,
+rather than the next seven-day forecast. The result is an experimental dataset
+similarity shortlist and still needs local agricultural validation. Do not use
+the model score as a probability of crop success or yield.
+
+Weather normals are requested from the Open-Meteo Historical Weather API using
+the ERA5 model, which provides the required precipitation, temperature, and
+humidity inputs together. The crop data is the [Atharva Ingle Kaggle Crop
+Recommendation dataset](https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset).
 
 ## Extending this for the full pitch
 
