@@ -35,17 +35,30 @@ export default function MarketPricePrediction() {
 
   const [crop, setCrop] = useState("rice");
   const [loading, setLoading] = useState(false);
+  const [recentPrices, setRecentPrices] = useState(["","","","","","","","","",""]);
+  const [usedPrices, setUsedPrices] = useState([]);
   const [result, setResult] = useState(null);
+
+  const DEFAULT_PRICES = {
+    rice: [430,440,450,460,455,465,470,480,475,485],
+    wheat: [2100,2110,2120,2115,2125,2130,2140,2135,2145,2150],
+    maize: [1800,1810,1820,1815,1825,1830,1840,1835,1845,1850],
+    cotton: [5800,5850,5900,5880,5920,5950,6000,5980,6020,6050],
+    soybean: [3800,3820,3840,3830,3850,3870,3900,3880,3920,3950],
+  };
 
   const handleForecast = async (e) => {
     e.preventDefault();
     setLoading(true);
     setResult(null);
-    try {
-      const payload = {
-        crop,
-        recent_prices: [2100, 2110, 2130, 2125, 2140, 2160, 2155, 2170, 2180, 2190],
-      };
+    try { 
+      //FIX 11: Filter out empty or invalid price inputs before sending to backend
+      const filled = recentPrices.map(Number).filter(n => !isNaN(n) && n > 0);
+      const pricesToUse = filled.length === 10 ? filled : DEFAULT_PRICES[crop];
+      setUsedPrices(pricesToUse);
+      const payload = { crop, recent_prices: pricesToUse };
+
+      // FIX 3
       const response = await fetch(`${API_URL}/api/market/forecast`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -76,20 +89,14 @@ export default function MarketPricePrediction() {
 
   // Historical trend visual simulation based on payload input
   const trendGraphData = [
-    { day: "D-9", price: 2100 },
-    { day: "D-8", price: 2110 },
-    { day: "D-7", price: 2130 },
-    { day: "D-6", price: 2125 },
-    { day: "D-5", price: 2140 },
-    { day: "D-4", price: 2160 },
-    { day: "D-3", price: 2155 },
-    { day: "D-2", price: 2170 },
-    { day: "D-1", price: 2180 },
-    { day: "Today", price: 2190 },
+    ...usedPrices.map((price, i) => ({
+      day: i === usedPrices.length - 1 ? "Today" : `D-${usedPrices.length - 1 - i}`,
+      price,
+    })),
     ...(result?.forecasted_price
       ? [{ day: "Tomorrow (AI)", price: Number(result.forecasted_price), isForecast: true }]
       : []),
-  ];
+  ]; //FIX 12
 
   return (
     <div className="min-h-screen bg-bg-light dark:bg-bg-dark text-stone-900 dark:text-stone-100 pt-28 pb-20 px-4 sm:px-6 lg:px-8 transition-colors duration-200">
@@ -497,4 +504,4 @@ export default function MarketPricePrediction() {
       </div>
     </div>
   );
-}
+}

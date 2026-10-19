@@ -168,55 +168,32 @@ export default function DiseaseDetection() {
       </div>
 
       {/* Results */}
+      // FIX 6: Show maintenance message when model is under maintenance 
+        {result && (
+          <div className="mt-8 p-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl text-center">
+            <p className="font-bold text-amber-800 dark:text-amber-300 mb-1">
+              🔧 Model Under Maintenance
+            </p>
+            <p className="text-sm text-amber-700 dark:text-amber-400">
+              Our disease detection model is being upgraded. Please check back soon or consult your local Krishi Vigyan Kendra.
+            </p>
+          </div>
+        )}
 
-      {result && (
-                  <div>
 
-            {/* Header */}
-
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-b border-emerald-100 dark:border-gray-700 px-8 py-6">
-
-              <div>
-
-                <h2 className="text-2xl font-bold text-emerald-950 dark:text-white flex items-center gap-2">
-                  <Sparkles className="w-6 h-6 text-emerald-600" />
-                  {t("diseaseDetection.diagnosis")}
-                </h2>
-
-                <p className="text-emerald-600 dark:text-gray-400 mt-1">
-                  {t("diseaseDetection.diagnosisDesc")}
-                </p>
-
-              </div>
-
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-medium">
-
-                <ShieldCheck className="w-5 h-5" />
-
-                {t("diseaseDetection.aiVerified")}
-
-              </span>
-
-            </div>
-
-            {/* Body */}
+        {/* Body */}
 
             <div className="p-8">
-
               <div className="text-center mb-10">
-
                 <div className="text-6xl mb-4">
                   🌿
                 </div>
-
                 <h3 className="text-4xl font-bold text-emerald-950 dark:text-white">
                   {result.disease}
                 </h3>
-
                 <p className="text-emerald-600 dark:text-gray-400 mt-3">
                   {t("diseaseDetection.recDesc")}
                 </p>
-
               </div>
 
               {/* Metrics */}
@@ -299,15 +276,9 @@ export default function DiseaseDetection() {
                   <Upload className="w-5 h-5" />
                   {t("diseaseDetection.btnAnother")}
                 </button>
-
               </div>
-
             </div>
-
           </div>
-        )}
-
       </div>
-    </div>
   );
 }

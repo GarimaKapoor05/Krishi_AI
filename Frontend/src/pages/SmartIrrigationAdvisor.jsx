@@ -26,7 +26,7 @@ export default function SmartIrrigationAdvisor() {
     humidity: "",
     temp: "",
     et: "",
-  });
+    crop: "", });
 
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -62,6 +62,7 @@ export default function SmartIrrigationAdvisor() {
         humidity: parseFloat(formData.humidity),
         temp: parseFloat(formData.temp),
         et: parseFloat(formData.et || 4.5),
+        crop: formData.crop || "general", // FIX 13b 
       };
 
       const response = await fetch(`${API_URL}/irrigation/predict`, {
@@ -244,6 +245,29 @@ export default function SmartIrrigationAdvisor() {
                   </div>
                 );
               })}
+              //FIX 13c
+              {/* Crop selector */}
+              <div className="space-y-1.5 sm:col-span-2">
+                <label className="text-xs sm:text-sm font-bold text-stone-800 dark:text-stone-200">
+                  Crop Type <span className="text-stone-400 font-normal">(for specific tips)</span>
+                </label>
+                <div className="flex items-center border border-stone-200 dark:border-stone-700 rounded-2xl px-4 py-3.5 bg-stone-50/50 dark:bg-stone-800/40 focus-within:ring-2 focus-within:ring-emerald-500 transition">
+                  <Leaf className="text-emerald-600 mr-3 shrink-0" size={18} />
+                  <select
+                    name="crop"
+                    value={formData.crop}
+                    onChange={handleChange}
+                    className="w-full outline-none bg-transparent text-stone-900 dark:text-white font-semibold text-sm"
+                  >
+                    <option value="general">General / Mixed</option>
+                    <option value="rice">Rice</option>
+                    <option value="maize">Maize</option>
+                    <option value="cotton">Cotton</option>
+                    <option value="wheat">Wheat</option>
+                    <option value="soybean">Soybean</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             <div className="pt-4 border-t border-stone-100 dark:border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -408,4 +432,4 @@ export default function SmartIrrigationAdvisor() {
       </div>
     </div>
   );
-}
+}
