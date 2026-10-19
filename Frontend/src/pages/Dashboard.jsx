@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Calendar,
   CloudRain,
@@ -21,6 +22,43 @@ import { getFarmWeather } from "../services/weatherLocation";
 
 const PROFILE_KEY = "krishi_farm_profile_v2";
 
+// Indicative lifecycle checkpoints, not agronomic prescriptions. Actual timing
+// varies by variety, region, weather and cultivation method.
+const CROP_CYCLES = {
+  wheat: [0, 20, 45, 75, 110, 135], rice: [0, 20, 45, 75, 105, 135], paddy: [0, 20, 45, 75, 105, 135], "rice / paddy": [0, 20, 45, 75, 105, 135],
+  "maize (corn)": [0, 15, 35, 55, 85, 110], maize: [0, 15, 35, 55, 85, 110],
+  cotton: [0, 20, 50, 80, 120, 160], soybean: [0, 15, 35, 55, 85, 110],
+  "mustard / rapeseed": [0, 15, 35, 55, 85, 115], "mustard/rapeseed": [0, 15, 35, 55, 85, 115], rapeseed: [0, 15, 35, 55, 85, 115], mustard: [0, 15, 35, 55, 85, 115],
+  potato: [0, 15, 35, 55, 80, 105], tomato: [0, 20, 40, 60, 90, 120], onion: [0, 20, 45, 70, 100, 120],
+  sugarcane: [0, 30, 90, 180, 270, 330], chickpea: [0, 15, 35, 55, 80, 105],
+  chili: [0, 20, 45, 70, 100, 140], chilli: [0, 20, 45, 70, 100, 140], "groundnut": [0, 15, 35, 55, 80, 110], bajra: [0, 15, 30, 50, 75, 95],
+};
+const CROP_PHASES = ["Sowing / planting", "Establishment", "Vegetative growth", "Flowering", "Grain / fruit development", "Indicative harvest window"];
+const formatDate = (date) => date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+
+function makeCropCalendar({ profile, cropName, isCultivating, rawSowingDate, plannedPeriod }) {
+  if (!cropName) return [];
+  const value = isCultivating ? rawSowingDate : plannedPeriod;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) return [];
+  const start = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(start.getTime())) return [];
+  const key = cropName.trim().toLowerCase();
+  const offsets = CROP_CYCLES[key];
+  if (!offsets) return [{ date: start, day: 0, elapsed: 0, phase: "Sowing / planting", status: start < new Date(new Date().setHours(0,0,0,0)) ? "past" : "next" }];
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const daysFromStart = Math.max(0, Math.floor((today - start) / 86400000));
+  const checkpoints = offsets.map((day, index) => {
+    const date = new Date(start); date.setDate(date.getDate() + day);
+    return { date, phase: CROP_PHASES[index], day };
+  });
+  const current = checkpoints.reduce((found, item, index) => item.date <= today ? index : found, -1);
+  return checkpoints.map((item, index) => ({
+    ...item,
+    status: index <= current ? "past" : index === current + 1 ? "next" : "upcoming",
+    elapsed: daysFromStart,
+  }));
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
@@ -30,6 +68,7 @@ export default function Dashboard() {
     error: null,
   });
   const [weatherRetryCount, setWeatherRetryCount] = useState(0);
+  const prefersReducedMotion = useReducedMotion();
 
   // Load saved farm profile from onboarding
   useEffect(() => {
@@ -104,51 +143,11 @@ export default function Dashboard() {
 
   const rawSowingDate = profile?.activeFarming?.sowingDate;
   const plannedPeriod = profile?.planningFarming?.plannedSowingPeriod;
-  // Starter check-ins are date reminders only, not crop-specific agronomic advice.
-  const calendarTasks = (() => {
-    if (!profile) return [];
-
-    const dateValue = isCultivating ? rawSowingDate : plannedPeriod;
-    if (!dateValue) return [];
-    const baseDate = new Date(`${dateValue}T00:00:00`);
-    if (Number.isNaN(baseDate.getTime())) return [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const steps = isCultivating
-      ? [
-          { offset: 0, title: "Sowing date recorded" },
-          { offset: 15, title: "Crop check-in" },
-          { offset: 30, title: "Crop check-in" },
-          { offset: 45, title: "Crop check-in" },
-          { offset: 60, title: "Crop check-in" },
-          { offset: 90, title: "Crop check-in" },
-          { offset: 120, title: "Crop check-in" },
-        ]
-      : [
-          { offset: -21, title: "Farm plan check-in" },
-          { offset: -14, title: "Inputs availability check" },
-          { offset: -7, title: "Pre-sowing check-in" },
-          { offset: 0, title: "Planned sowing date" },
-          { offset: 15, title: "Post-sowing check-in" },
-        ];
-
-    let nextAssigned = false;
-    return steps.map(({ offset, title }) => {
-      const date = new Date(baseDate);
-      date.setDate(date.getDate() + offset);
-      const isPast = date < today;
-      const status = !isPast && !nextAssigned ? "next" : isPast ? "past" : "upcoming";
-      if (status === "next") nextAssigned = true;
-      return {
-        dateStr: date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
-        title,
-        desc: isCultivating
-          ? "Record crop condition and questions for your next visit with a local agricultural adviser. Check-in timing is a reminder, not a crop treatment schedule."
-          : "Review your plan and local conditions with a trusted agricultural adviser. This reminder is not a recommendation to sow or apply inputs.",
-        status,
-      };
-    });
-  })();
+  const calendarTasks = makeCropCalendar({ profile, cropName, isCultivating, rawSowingDate, plannedPeriod });
+  const nextMilestone = calendarTasks.find((task) => task.status === "next");
+  const elapsedDays = calendarTasks[0]?.elapsed ?? 0;
+  const cycleDays = calendarTasks.at(-1)?.day || 1;
+  const cropProgress = isCultivating ? Math.min(100, Math.round((elapsedDays / cycleDays) * 100)) : 0;
 
   // Determine practical next action
   const nextAction = (() => {
@@ -160,31 +159,26 @@ export default function Dashboard() {
         btnLabel: "Set up farm plan",
       };
     }
-    const nextTask = calendarTasks.find((t) => t.status === "next");
     return {
-      title: nextTask ? nextTask.title : calendarTasks.length ? "No upcoming check-ins" : "Add a crop date to your plan",
-      text: nextTask
-        ? `${nextTask.desc} (Reminder: ${nextTask.dateStr})`
-        : calendarTasks.length
-          ? "Your starter reminders have passed. Update your crop dates to create a current timeline."
-          : "Add a sowing or planting date to create starter reminders. Crop-specific advice is not available yet.",
+      title: nextMilestone ? `${nextMilestone.phase} · ${formatDate(nextMilestone.date)}` : calendarTasks.length ? "Indicative crop cycle complete" : "Add a crop and sowing date",
+      text: nextMilestone ? `Estimated ${Math.max(0, Math.round((nextMilestone.date - new Date()) / 86400000))} days to your next crop stage.` : "Set your crop and sowing date to see a crop-stage timeline.",
       link: null,
       btnLabel: null,
     };
   })();
 
   return (
-    <div className="pt-24 sm:pt-28 pb-16 min-h-screen bg-[#FAF9F5] dark:bg-[#0b1410] text-stone-900 dark:text-stone-100 transition-colors">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-8">
+    <div className="pt-20 sm:pt-24 pb-12 min-h-screen bg-[#f7f7f2] dark:bg-[#0b1410] text-stone-900 dark:text-stone-100 transition-colors">
+      <motion.div initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="max-w-6xl mx-auto px-4 sm:px-6 space-y-5">
 
         {/* ── Welcome Greeting & Location ── */}
-        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-6 sm:p-8 shadow-xs">
+        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-5 sm:p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-3 py-1 rounded-full inline-block mb-2">
                 Farmer Dashboard
               </span>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900 dark:text-white">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900 dark:text-white">
                 Welcome back, {farmerName}
               </h1>
               <p className="text-sm text-stone-600 dark:text-stone-400 flex items-center gap-1.5 mt-1">
@@ -195,12 +189,12 @@ export default function Dashboard() {
 
             {profile ? (
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700">
+                <span className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700">
                   {profile.farmLocation?.farmSize
                     ? `${profile.farmLocation.farmSize} ${profile.farmLocation.measurementUnit || "acres"}`
                     : "Farm size not provided"}
                 </span>
-                <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 capitalize">
+                <span className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 capitalize">
                   {profile.farmLocation?.soilType && profile.farmLocation.soilType !== "unknown"
                     ? `${profile.farmLocation.soilType} soil`
                     : "Soil type not provided"}
@@ -225,19 +219,19 @@ export default function Dashboard() {
         </div>
 
         {/* ── Practical Next Action Banner ── */}
-        <div className="bg-emerald-900 text-white rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="bg-emerald-950 text-white rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-start gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-emerald-800 flex items-center justify-center shrink-0 mt-0.5">
               <CheckCircle2 size={20} className="text-emerald-300" />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-emerald-200">
-                Next Farm Reminder
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-200">
+                Crop timeline
               </p>
-              <h2 className="text-base sm:text-lg font-bold text-white mt-0.5">
+              <h2 className="text-sm sm:text-base font-semibold text-white mt-0.5">
                 {nextAction.title}
               </h2>
-              <p className="text-xs sm:text-sm text-emerald-100/90 mt-1 leading-relaxed">
+              <p className="text-xs text-emerald-100/90 mt-1 leading-relaxed">
                 {nextAction.text}
               </p>
             </div>
@@ -256,7 +250,7 @@ export default function Dashboard() {
 
         {/* ── Crop Plan Summary Card ── */}
         {profile ? (
-          <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-6 sm:p-7 shadow-xs space-y-4">
+          <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
               <div className="flex items-center gap-2">
                 <Sprout className="h-5 w-5 text-emerald-700" />
@@ -289,14 +283,14 @@ export default function Dashboard() {
               <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/50">
                 <span className="text-[11px] font-semibold text-stone-500 uppercase block">Irrigation Source</span>
                 <span className="font-bold text-sm sm:text-base text-stone-900 dark:text-white block mt-0.5 capitalize">
-                  {profile.farmLocation?.irrigationSource || "Borewell / Rainfed"}
+                  {profile.farmLocation?.irrigationSource || "Not provided"}
                 </span>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/50">
                 <span className="text-[11px] font-semibold text-stone-500 uppercase block">Water Status</span>
                 <span className="font-bold text-sm sm:text-base text-stone-900 dark:text-white block mt-0.5 capitalize">
-                  {profile.farmLocation?.waterAvailability || "Moderate"}
+                  {profile.farmLocation?.waterAvailability || "Not provided"}
                 </span>
               </div>
             </div>
@@ -319,24 +313,28 @@ export default function Dashboard() {
         )}
 
         {/* ── Crop Calendar & Milestone Tasks ── */}
-        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-6 sm:p-7 shadow-xs space-y-5">
+        <motion.div initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }} whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.35 }} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-5 sm:p-6 shadow-sm space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-emerald-700" />
               <h3 className="font-extrabold text-base sm:text-lg text-stone-900 dark:text-white">
-                Crop Season Calendar
+                {cropName ? `${cropName} crop calendar` : "Crop calendar"}
               </h3>
             </div>
             <span className="text-xs text-stone-500">
-              Stage-by-stage field tasks
+              Estimated growth stages
             </span>
           </div>
 
-          <div className="divide-y divide-stone-100 dark:divide-stone-800">
+          {isCultivating && calendarTasks.length > 1 && <div className="rounded-xl bg-stone-50 dark:bg-stone-800/40 p-4">
+            <div className="flex justify-between text-xs"><span className="font-semibold capitalize">{cropName}</span><span className="text-stone-500">Day {elapsedDays} · ~{cycleDays} day cycle</span></div>
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700"><motion.div initial={prefersReducedMotion ? false : { width: 0 }} whileInView={prefersReducedMotion ? undefined : { width: `${cropProgress}%` }} viewport={{ once: true }} transition={{ duration: 0.7, ease: "easeOut" }} className="h-full rounded-full bg-emerald-700" /></div>
+          </div>}
+          {calendarTasks.length === 0 ? <div className="rounded-xl border border-dashed border-stone-300 p-6 text-center dark:border-stone-700"><Calendar className="mx-auto mb-2 h-5 w-5 text-emerald-700"/><p className="text-sm font-semibold">Add a crop and sowing date</p><p className="mt-1 text-xs text-stone-500">Your timeline will be calculated from the date in your farm profile.</p><Link to="/onboarding?edit=1" className="mt-3 inline-flex text-xs font-semibold text-emerald-800 hover:underline">Update crop plan <ArrowRight size={13} className="ml-1"/></Link></div> : <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {calendarTasks.map((task, i) => (
-              <div key={i} className="py-3.5 first:pt-0 last:pb-0 flex items-start gap-3.5">
+              <div key={i} className={`relative overflow-hidden rounded-xl border p-3 transition-colors ${task.status === "next" ? "border-emerald-300 bg-emerald-50/70 dark:border-emerald-800 dark:bg-emerald-950/20" : "border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900"}`}>
                 <div className="mt-1">
-                  {task.status === "done" ? (
+                  {task.status === "past" ? (
                     <CheckCircle2 size={18} className="text-emerald-700 shrink-0" />
                   ) : task.status === "next" ? (
                     <Clock size={18} className="text-amber-600 shrink-0 animate-pulse" />
@@ -348,23 +346,24 @@ export default function Dashboard() {
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                     <h4 className="font-bold text-sm sm:text-base text-stone-900 dark:text-white">
-                      {task.title}
+                      {task.phase}
                     </h4>
                     <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 whitespace-nowrap">
-                      {task.dateStr}
+                      {formatDate(task.date)}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300 mt-0.5 leading-relaxed">
-                    {task.desc}
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-1 leading-relaxed">
+                    {isCultivating ? `Day ${task.day} after sowing` : `Target · Day ${task.day}`}
                   </p>
                 </div>
               </div>
             ))}
-          </div>
-        </div>
+          </div>}
+          <p className="text-[10px] text-stone-500">Indicative timeline only. Crop duration varies by variety, location, and conditions; confirm local timing with an agricultural extension officer.</p>
+        </motion.div>
 
         {/* ── Seven-Day Weather Section (Open-Meteo Integration) ── */}
-        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-6 sm:p-7 shadow-xs space-y-4">
+        <motion.div initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }} whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.35 }} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
             <div className="flex items-center gap-2">
               <CloudRain className="h-5 w-5 text-sky-700" />
@@ -454,7 +453,7 @@ export default function Dashboard() {
               </p>
             </div>
           )}
-        </div>
+        </motion.div>
 
         {/* ── Working Features Jump Cards ── */}
         <div>
@@ -528,7 +527,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-      </div>
+      </motion.div>
     </div>
   );
 }
