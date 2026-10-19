@@ -1,16 +1,20 @@
-# React + Vite
+# Krishi AI Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+## Run locally
 
-Currently, two official plugins are available:
+From this folder:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+Vite serves the app at <http://localhost:5173> by default. The existing landing page remains at `/`; farmer onboarding is available at `/onboarding`.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Phase 1 onboarding
 
-## Expanding the Oxlint configuration
+The onboarding flow collects account, farm, and crop details, supports active-crop and planning branches, preserves non-sensitive drafts in browser storage, and lets farmers review or edit their answers before completion.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+Registration uses the existing Flask `POST /auth/register` endpoint. When the backend cannot be reached in development, the form labels the session as a preview and does not claim an account was created. Passwords are excluded from browser drafts and completed farm-profile storage.
+
+The full farm profile is saved in the current browser because the backend does not yet have an endpoint for it. Crop recommendations and the farmer dashboard remain out of scope for this onboarding phase.

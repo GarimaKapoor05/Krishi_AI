@@ -79,7 +79,7 @@ export default function CallToAction() {
           {/* Primary CTA */}
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
-              to="/register"
+              to="/onboarding"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-white hover:bg-emerald-50 text-emerald-950 font-extrabold text-base shadow-xl transition-all"
             >
               <span>{t("cta.btnStart", { defaultValue: "Start Your Smart Farm →" })}</span>

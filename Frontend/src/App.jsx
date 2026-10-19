@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import Navbar from "./components/Navbar";
@@ -30,6 +30,7 @@ import SellerDashboard from "./pages/SellerDashboard";
 import BuyerDashboard from "./pages/BuyerDashboard";
 
 import GovSchemeAdvisor from "./pages/GovSchemeAdvisor";
+import Onboarding from "./pages/Onboarding";
 
 function Home() {
   return (
@@ -49,9 +50,12 @@ function Home() {
 
 
 function App() {
+  const { pathname } = useLocation();
+  const isOnboarding = pathname === "/onboarding";
+
   return (
     <div className="min-h-screen bg-[#FDFEFC] dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-200">
-      <Navbar />
+      {!isOnboarding && <Navbar />}
 
       <Routes>
         <Route path="/" element={<Home />} />
@@ -59,6 +63,7 @@ function App() {
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/onboarding" element={<Onboarding />} />
 
         <Route path="/dashboard" element={<Dashboard />} />
 
@@ -106,7 +111,7 @@ function App() {
         <Route path="/features/schemes" element={<GovSchemeAdvisor />} />
       </Routes>
 
-      <Footer />
+      {!isOnboarding && <Footer />}
     </div>
   );
 }

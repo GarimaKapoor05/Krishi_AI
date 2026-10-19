@@ -95,18 +95,18 @@ export default function Hero() {
           {/* Action CTAs */}
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-4">
             <Link
-              to="/dashboard"
+              to="/onboarding"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 sm:px-8 sm:py-4 rounded-2xl bg-gradient-to-r from-emerald-800 to-emerald-900 hover:from-emerald-900 hover:to-black text-white font-bold text-sm sm:text-base shadow-lg shadow-emerald-900/20 hover:shadow-xl transition-all duration-300 group"
             >
-              <span>Explore Live Advisory</span>
+              <span>Start Farmer Onboarding</span>
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </Link>
 
             <Link
-              to="/crop-prediction"
+              to="/features/schemes"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 sm:px-8 sm:py-4 rounded-2xl border-2 border-emerald-800/20 dark:border-emerald-700/40 hover:border-emerald-800 dark:hover:border-emerald-500 bg-white/80 dark:bg-stone-900/80 text-stone-900 dark:text-stone-100 font-bold text-sm sm:text-base transition-all duration-200 shadow-xs"
             >
-              <span>Try Crop Recommendation</span>
+              <span>Find Government Schemes</span>
             </Link>
           </div>
 

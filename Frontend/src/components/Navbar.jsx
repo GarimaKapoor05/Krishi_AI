@@ -281,7 +281,7 @@ export default function Navbar() {
                   </Link>
 
                   <Link
-                    to="/register"
+                    to="/onboarding"
                     className="bg-emerald-800 hover:bg-emerald-900 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-emerald-900/15 hover:shadow-lg transition-all"
                   >
                     {t("nav.get_started", { defaultValue: "Get Started" })}
@@ -475,7 +475,7 @@ export default function Navbar() {
                 {t("nav.login", { defaultValue: "Login" })}
               </Link>
               <Link
-                to="/register"
+                to="/onboarding"
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full text-center py-2.5 rounded-xl text-sm font-bold bg-emerald-800 text-white shadow-md shadow-emerald-900/20"
               >
