@@ -20,11 +20,14 @@ import ComingSoon from "./pages/ComingSoon";
 import DiseaseDetection from "./pages/DiseaseDetection";
 import Dashboard from "./pages/Dashboard";
 import MarketPricePrediction from "./pages/MarketPricePrediction";
+import MarketIntelligence from "./pages/MarketIntelligence";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import UnderConstruction from "./pages/UnderConstruction";
 import UserDashboard from "./pages/UserDashboard";
+import SellerDashboard from "./pages/SellerDashboard";
+import BuyerDashboard from "./pages/BuyerDashboard";
 
 import GovSchemeAdvisor from "./pages/GovSchemeAdvisor";
 
@@ -64,11 +67,27 @@ function App() {
         <Route path="/features/irrigation" element={<SmartIrrigationAdvisor />} />
         <Route path="/disease-detection" element={<DiseaseDetection />} />
         <Route path="/features/price-prediction" element={<MarketPricePrediction />} />
+        <Route path="/features/market-intelligence" element={<MarketIntelligence />} />
 
         {/* Protected Routes */}
         <Route path="/user-dashboard" element={
           <ProtectedRoute>
             <UserDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/seller-dashboard" element={
+          <ProtectedRoute>
+            <SellerDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/buyer-dashboard" element={
+          <ProtectedRoute>
+            <BuyerDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/marketplace" element={
+          <ProtectedRoute>
+            <BuyerDashboard />
           </ProtectedRoute>
         } />
         {/* Coming Soon */}
