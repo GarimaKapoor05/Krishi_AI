@@ -44,6 +44,21 @@ SCALER_PATH = os.path.join(_THIS_DIR, "feature_scaler.joblib")
 DATA_PATH = os.path.join(_THIS_DIR, "Crop_recommendation.csv")
 
 FEATURES = ["N", "P", "K", "temperature", "humidity", "ph", "rainfall"]
+# The public Kaggle labels include perennial/tree crops as well as annual field
+# crops. Keep a farmer's requested crop group explicit instead of letting the
+# model silently recommend a tree for a seasonal field plan.
+CROP_GROUPS = {
+    "cereals": {"rice", "maize"},
+    "pulses": {"chickpea", "kidneybeans", "pigeonpeas", "mothbeans", "mungbean", "blackgram", "lentil"},
+    "oilseeds": {"soybean"},
+    "vegetables": {"muskmelon"},
+    "ground_fruits": {"watermelon", "muskmelon"},
+    "field_crops": {"rice", "maize", "chickpea", "kidneybeans", "pigeonpeas", "mothbeans", "mungbean", "blackgram", "lentil", "soybean", "cotton", "jute", "watermelon", "muskmelon"},
+}
+GROUP_LABELS = {
+    "any_field_crop": CROP_GROUPS["field_crops"],
+    **CROP_GROUPS,
+}
 _training_data = pd.read_csv(DATA_PATH)
 _TRAINING_RANGES = {
     feature: (float(_training_data[feature].min()), float(_training_data[feature].max()))
@@ -55,7 +70,7 @@ _encoder = joblib.load(ENCODER_PATH)
 _scaler = joblib.load(SCALER_PATH)
 
 
-def predict_crop(N, P, K, temperature, humidity, ph, rainfall, top_n=3):
+def predict_crop(N, P, K, temperature, humidity, ph, rainfall, top_n=3, crop_group="any_field_crop"):
     """
     Returns the top_n predicted crops with confidence scores, plus a
     fertilizer suggestion for the top prediction.
@@ -80,7 +95,13 @@ def predict_crop(N, P, K, temperature, humidity, ph, rainfall, top_n=3):
     input_scaled = _scaler.transform(input_df)
 
     probs = _model.predict_proba(input_scaled)[0]
-    top_indices = np.argsort(probs)[::-1][:top_n]
+    allowed = GROUP_LABELS.get(str(crop_group or "any_field_crop").lower())
+    if allowed is None:
+        raise ValueError("Choose a supported crop group before requesting a crop shortlist.")
+    eligible = [idx for idx, name in enumerate(_encoder.classes_) if str(name).lower() in allowed]
+    if not eligible:
+        raise ValueError("No crops in this group are represented by the current model.")
+    top_indices = sorted(eligible, key=lambda idx: probs[idx], reverse=True)[:max(1, min(int(top_n), len(eligible)))]
 
     top_predictions = [
         {"crop": _encoder.inverse_transform([idx])[0], "confidence": round(probs[idx] * 100, 2)}
@@ -94,6 +115,8 @@ def predict_crop(N, P, K, temperature, humidity, ph, rainfall, top_n=3):
         "input": {
             **numeric_values
         },
+        "crop_group": crop_group,
+        "crop_group_note": "The Kaggle model has no crop-group labels; this shortlist is filtered to the selected annual/ground-grown crop group.",
         "top_predictions": top_predictions,
         "recommended_crop": best_crop,
         "confidence": top_predictions[0]["confidence"],

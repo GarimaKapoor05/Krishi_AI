@@ -103,10 +103,10 @@ export default function CropCalendar({ cropName, isCultivating, sowingDate, plan
   const percent = model.events.length ? Math.round(completedCount / model.events.length * 100) : 0;
   const elapsed = model.startDate ? Math.max(0, Math.floor((today - model.startDate) / 86400000)) : 0;
   const phaseText = model.perennial
-    ? (isCultivating ? "Mature trees · yearly care reminders" : "Young orchard · planting and care reminders")
+    ? (isCultivating ? t("cropCalendar.matureTrees") : t("cropCalendar.youngOrchard"))
       : isCultivating
-      ? `${model.currentStage} · day ${elapsed + 1} of about ${model.durationDays}`
-      : `Planting planned · ${prettyDate(model.startDate)}`;
+      ? t("cropCalendar.stageDay", { stage: model.currentStage, day: elapsed + 1, duration: model.durationDays })
+      : t("cropCalendar.plantingPlanned", { date: prettyDate(model.startDate, undefined, i18n.resolvedLanguage) });
 
   const toggleDone = (id) => setCompleted((previous) => {
     const next = { ...previous };
@@ -167,27 +167,27 @@ export default function CropCalendar({ cropName, isCultivating, sowingDate, plan
                 </button>;
               })}
             </div>
-            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-stone-100 pt-3 text-[10px] text-stone-500 dark:border-stone-800"><span className="inline-flex items-center gap-1"><i className="h-1.5 w-1.5 rounded-full bg-amber-500" />Growth stage</span><span className="inline-flex items-center gap-1"><i className="h-1.5 w-1.5 rounded-full bg-sky-500" />Field check</span><span className="inline-flex items-center gap-1"><i className="h-1.5 w-1.5 rounded-full bg-emerald-600" />Completed</span></div>
+            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-stone-100 pt-3 text-[10px] text-stone-500 dark:border-stone-800 dark:text-stone-400"><span className="inline-flex items-center gap-1"><i className="h-1.5 w-1.5 rounded-full bg-amber-500" />{t("cropCalendar.growthStage")}</span><span className="inline-flex items-center gap-1"><i className="h-1.5 w-1.5 rounded-full bg-sky-500" />{t("cropCalendar.fieldCheck")}</span><span className="inline-flex items-center gap-1"><i className="h-1.5 w-1.5 rounded-full bg-emerald-600" />{t("cropCalendar.done")}</span></div>
           </div>
         ) : (
-          <div className="rounded-2xl border border-stone-200 p-4 dark:border-stone-800">
-            <div className="mb-4 flex items-center justify-between"><div><h4 className="text-sm font-bold">Crop tasks</h4><p className="text-[11px] text-stone-500">{completedCount} of {model.events.length} tasks done</p></div><span className="text-sm font-bold text-emerald-800 dark:text-emerald-300">{percent}%</span></div>
+          <div className="rounded-2xl border border-stone-200 p-4 text-stone-900 dark:border-stone-800 dark:text-stone-100">
+            <div className="mb-4 flex items-center justify-between"><div><h4 className="text-sm font-bold">{t("cropCalendar.cropTasks")}</h4><p className="text-[11px] text-stone-500 dark:text-stone-400">{t("cropCalendar.tasksDone", { done: completedCount, total: model.events.length })}</p></div><span className="text-sm font-bold text-emerald-800 dark:text-emerald-300">{percent}%</span></div>
             <div className="mb-4 h-2 overflow-hidden rounded-full bg-stone-100 dark:bg-stone-800"><motion.div initial={{ width: 0 }} animate={{ width: `${percent}%` }} transition={{ duration: 0.4 }} className="h-full rounded-full bg-emerald-700" /></div>
             <div className="max-h-[480px] space-y-2 overflow-y-auto pr-1">{model.events.map((event) => <TaskItem key={event.id} event={event} status={completed[event.id] ? "done" : event.date < calendarDateKey(today) ? "past" : event.date === calendarDateKey(today) ? "today" : "upcoming"} onToggle={toggleDone} compact />)}</div>
           </div>
         )}
 
         <aside className="rounded-2xl bg-stone-50 p-4 dark:bg-stone-800/50 sm:p-5">
-          <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Tasks for this day</p><h4 className="mt-1 text-sm font-bold">{selectedDate ? prettyDate(selectedDate, { weekday: "long", day: "numeric", month: "long" }) : "Choose a date"}</h4></div>{selectedEvents.length > 0 && <span className="rounded-full bg-sky-100 px-2 py-1 text-[10px] font-bold text-sky-800 dark:bg-sky-950/60 dark:text-sky-200">{selectedEvents.length} {selectedEvents.length === 1 ? "task" : "tasks"}</span>}</div>
+          <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">{t("cropCalendar.tasksForDay")}</p><h4 className="mt-1 text-sm font-bold text-stone-900 dark:text-stone-100">{selectedDate ? prettyDate(selectedDate, { weekday: "long", day: "numeric", month: "long" }, i18n.resolvedLanguage) : t("cropCalendar.chooseDate")}</h4></div>{selectedEvents.length > 0 && <span className="rounded-full bg-sky-100 px-2 py-1 text-[10px] font-bold text-sky-800 dark:bg-sky-950/60 dark:text-sky-200">{t("cropCalendar.taskCount", { count: selectedEvents.length })}</span>}</div>
           <div className="mt-4 space-y-2">
-            {selectedEvents.length ? selectedEvents.map((event) => <TaskItem key={event.id} event={event} status={completed[event.id] ? "done" : event.date < calendarDateKey(today) ? "past" : event.date === calendarDateKey(today) ? "today" : "upcoming"} onToggle={toggleDone} />) : <div className="rounded-xl border border-dashed border-stone-300 bg-white/70 px-3 py-5 text-center dark:border-stone-700 dark:bg-stone-900/50"><Clock3 size={17} className="mx-auto text-stone-400" /><p className="mt-2 text-xs font-semibold text-stone-700 dark:text-stone-200">No crop task planned</p><p className="mt-1 text-[11px] text-stone-500">Choose a day with a colored dot to see its task.</p></div>}
+            {selectedEvents.length ? selectedEvents.map((event) => <TaskItem key={event.id} event={event} status={completed[event.id] ? "done" : event.date < calendarDateKey(today) ? "past" : event.date === calendarDateKey(today) ? "today" : "upcoming"} onToggle={toggleDone} />) : <div className="rounded-xl border border-dashed border-stone-300 bg-white/70 px-3 py-5 text-center dark:border-stone-700 dark:bg-stone-900/50"><Clock3 size={17} className="mx-auto text-stone-400" /><p className="mt-2 text-xs font-semibold text-stone-700 dark:text-stone-200">{t("cropCalendar.noTask")}</p><p className="mt-1 text-[11px] text-stone-500 dark:text-stone-400">{t("cropCalendar.chooseDayHint")}</p></div>}
           </div>
           <div className="mt-4 rounded-xl border border-emerald-200/80 bg-white p-3 text-[11px] leading-relaxed text-stone-600 dark:border-emerald-900/60 dark:bg-stone-900 dark:text-stone-300"><div className="mb-1 flex items-center gap-1.5 font-bold text-emerald-900 dark:text-emerald-200"><Leaf size={13} />Calendar guidance</div>{model.note}</div>
         </aside>
       </div>
 
       {view === "month" && nextEvent && <button type="button" onClick={() => { const date = parseCalendarDate(nextEvent.date); setSelectedDate(date); setVisibleMonth(new Date(date.getFullYear(), date.getMonth(), 1)); }} className="inline-flex items-center gap-2 rounded-lg px-1 py-1 text-xs font-semibold text-emerald-800 hover:underline dark:text-emerald-300"><ArrowLeft size={13} /> Jump to next planned action: {prettyDate(nextEvent.date)} · {nextEvent.title} <ArrowRight size={13} /></button>}
-      <p className="text-[10px] text-stone-400">Your checkmarks are saved on this device. Dates are guides and may change with your crop and local weather. Ask a local farm adviser before making treatment decisions.</p>
+      <p className="text-[10px] text-stone-500 dark:text-stone-400">{t("cropCalendar.localSaveNote")}</p>
     </section>
   );
 }

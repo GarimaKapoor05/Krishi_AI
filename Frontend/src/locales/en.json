@@ -8,6 +8,7 @@
     "my_dashboard": "My Dashboard",
     "logout": "Logout",
     "login": "Login",
+    "chooseLanguage": "Choose language",
     "get_started": "Get Started",
     "market_intel": "Market Intelligence",
     "market": "Mandi prices",
@@ -46,6 +47,7 @@
     "nextStepTitle": "Start with the details you already know.",
     "nextStepDescription": "Your farm location and crop plan help put weather and seasonal tasks in context. You can skip optional details and come back later."
   },
+  "onboarding": {"loginLink": "Already registered? Log in"},
   "hero": {
     "title": "Precision Agriculture,",
     "titleGreen": "Optimized.",
@@ -304,6 +306,20 @@
     "title": "Irrigation check",
     "desc": "Local weather and reference ET₀ are filled from your saved farm location. Add a current root-zone moisture reading for a preliminary field estimate.",
     "fieldConditions": "Farm and field inputs",
+    "wateringPlan": "Your watering plan",
+    "subtitle": "See how much water your crop may use this week, how rain may help, and when to check the soil before watering.",
+    "loadingWeather": "Loading your farm's seven-day forecast…",
+    "noLocation": "Add your farm location during setup to get local weather automatically.",
+    "weatherUnavailable": "Local weather is unavailable. Try again later.",
+    "locationRequired": "We need your farm location to get local weather. Check your saved location and try again.",
+    "cropField": "Your crop and field",
+    "savedDetails": "Your saved farm details are filled in for you. Change them only if this field is different.",
+    "crop": "Crop", "cropPlaceholder": "Choose or type a crop", "plantingDate": "Planting date",
+    "soilQuestion": "What kind of soil do you have?", "stageQuestion": "What is the crop doing now?", "optional": "(optional)",
+    "stageAuto": "Work it out from planting date", "stageNew": "Just planted / new shoots", "stageGrowing": "Growing leaves and stems", "stageFlowering": "Flowering", "stageFruit": "Flowers or fruit / grain growing", "stageRipening": "Fruit or grain ripening", "stageHarvest": "Ready to harvest",
+    "farmArea": "Farm area", "hectares": "hectares", "soilFeel": "Touch the soil near the plant roots. How does it feel?", "soilFeelHint": "This quick check helps us make a better estimate. It is not a sensor reading.",
+    "wet": "Still wet", "damp": "Feels damp", "moist": "A little moist", "someMoisture": "Some moisture", "dry": "Dry to touch", "feelsDry": "Feels dry",
+    "weatherReuse": "We use your farm’s seven-day weather forecast. No need to enter the weather again.", "makePlan": "Make my watering plan", "calculating": "Making your watering plan…", "estimateHelps": "How this estimate helps", "farmWeather": "Your farm details and local weather", "cropReason": "We use your crop and planting date to estimate its growth stage.", "rainReason": "Expected rain may reduce how much extra water the field needs.", "soilReason": "Soil type helps us estimate how long the field may hold water.", "estimateDisclaimer": "This is a field-planning estimate, not a guaranteed irrigation prescription. Actual soil water capacity, crop variety, rain infiltration, slope, and irrigation-system losses vary.",
     "demoNote": "Weather is reused from your farm profile. Soil moisture must be checked in the field.",
     "moisture": "Soil Moisture (%)",
     "humidity": "Air Humidity (%)",
@@ -391,7 +407,7 @@
   "farmerDashboard": {
     "title": "Farmer Dashboard", "farmer": "Farmer", "welcome": "Welcome back, {{name}}", "completeProfile": "Complete your farm profile", "completeProfileText": "Add your land size and active crop in onboarding to create your crop calendar and next tasks.", "setupPlan": "Set up farm plan", "cycleComplete": "Current crop cycle complete", "addCropDate": "Add a crop and planting date", "addCropDateText": "Add your crop and planting date to build a dated field calendar.", "dueToday": "Due today", "dueInDays": "In {{count}} days", "farmSizeMissing": "Farm size not provided", "soilMissing": "Soil type not provided", "updateProfile": "Update profile", "completeOnboarding": "Complete onboarding", "cropTimeline": "Crop timeline", "cropPlan": "Your crop plan", "activeCrop": "Active crop", "plannedSeason": "Planned season", "crop": "Crop", "notSpecified": "Not specified", "plantingDate": "Planting date", "plannedPeriod": "Planned period", "recorded": "Recorded", "upcoming": "Upcoming", "howYouWater": "How you water", "waterStatus": "Water status", "noCropPlan": "No crop plan recorded yet", "noCropPlanText": "Complete onboarding to add your land and crop plan. Your field calendar will appear here.", "startOnboarding": "Start onboarding", "currentConditions": "Current conditions", "feelsLike": "Feels like {{value}}°C", "humidityValue": " · {{value}}% humidity", "rainValue": " · {{value}} mm rain", "celsiusNow": "C now", "checkingWeather": "Checking weather for {{location}}…", "weatherStatus": "Weather service status", "retryWeather": "Retry weather", "today": "Today", "high": "High", "low": "Low", "farmTools": "Farm tools", "farmToolsText": "Useful services, together in one place.", "openTool": "Open tool", "mandiPrices": "Mandi prices", "mandiPricesText": "Compare nearby markets and recent crop prices.", "govSchemes": "Government schemes", "govSchemesText": "Explore support programmes and eligibility details.", "marketplace": "Farmer marketplace", "marketplaceText": "Browse harvest listings or offer your own produce.", "irrigationAdvisor": "Irrigation advisor", "irrigationAdvisorText": "Check field moisture and local weather before watering.", "notSet": "Not set"
   },
-  "cropCalendar": {"done":"Done","pastCheck":"Date passed · did you do this?","fieldCheck":"Field check","comingUp":"Coming up","undo":"Undo","markDone":"Mark done","addCrop":"Add your crop and planting date to see your farm calendar","useSavedPlan":"We use the crop plan you saved during onboarding.","title":"{{crop}} farm calendar","orchardCare":"Orchard care","growingNow":"Growing now","viewLabel":"Crop calendar view","month":"Month","allTasks":"All tasks","tasksThisMonth":"{{count}} crop tasks this month","previousMonth":"Previous month","nextMonth":"Next month"},
+  "cropCalendar": {"done":"Done","pastCheck":"Date passed · did you do this?","fieldCheck":"Field check","comingUp":"Coming up","undo":"Undo","markDone":"Mark done","addCrop":"Add your crop and planting date to see your farm calendar","useSavedPlan":"We use the crop plan you saved during onboarding.","title":"{{crop}} farm calendar","orchardCare":"Orchard care","growingNow":"Growing now","viewLabel":"Crop calendar view","month":"Month","allTasks":"All tasks","tasksThisMonth":"{{count}} crop tasks this month","previousMonth":"Previous month","nextMonth":"Next month","cropTasks":"Crop tasks","tasksDone":"{{done}} of {{total}} tasks done","tasksForDay":"Tasks for this day","chooseDate":"Choose a date","taskCount":"{{count}} tasks","noTask":"No crop task planned","chooseDayHint":"Choose a day with a colored dot to see its task.","matureTrees":"Mature trees · yearly care reminders","youngOrchard":"Young orchard · planting and care reminders","stageDay":"{{stage}} · day {{day}} of about {{duration}}","plantingPlanned":"Planting planned · {{date}}","growthStage":"Growth stage","localSaveNote":"Your checkmarks are saved on this device. Dates are guides and may change with your crop and local weather. Ask a local farm adviser before making treatment decisions."},
   "common": {
     "live": "Live",
     "coming_soon": "Soon",

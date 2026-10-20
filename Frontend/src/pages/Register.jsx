@@ -21,7 +21,9 @@ function Register() {
   const { login } = useAuth();
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === "farm_size" && value !== "" && Number(value) < 0) return;
+    setFormData((current) => ({ ...current, [name]: value }));
   };
 
   const handleRegister = async (e) => {
@@ -97,6 +99,7 @@ function Register() {
       icon: Tractor,
       placeholder: "e.g. 2.5",
       required: false,
+      min: 0,
       colSpan: 1,
     },
     {
@@ -189,6 +192,7 @@ function Register() {
                         onChange={handleChange}
                         placeholder={field.placeholder}
                         required={field.required}
+                        min={field.min}
                         step={field.name === "farm_size" ? "0.1" : undefined}
                         className="w-full outline-none bg-transparent text-stone-900 dark:text-white font-semibold text-sm placeholder:font-normal placeholder:text-stone-400"
                       />

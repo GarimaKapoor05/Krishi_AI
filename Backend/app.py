@@ -132,7 +132,8 @@ def predict_crop_route():
             temperature=data["temperature"],
             humidity=data["humidity"],
             ph=data["ph"],
-            rainfall=data["rainfall"]
+            rainfall=data["rainfall"],
+            crop_group=data.get("crop_group", "any_field_crop")
         )
 
         return jsonify(result)

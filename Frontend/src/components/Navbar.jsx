@@ -36,14 +36,14 @@ export default function Navbar() {
   ];
 
   const languagePicker = (compact = false) => (
-    <label className={`inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-2.5 ${compact ? "min-h-11 w-full" : "h-9"} text-xs font-semibold text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200`}>
+    <label className={`inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-stone-300 bg-[#faf9f5] px-2.5 ${compact ? "min-h-11 w-full" : "h-9"} text-xs font-semibold text-stone-800 shadow-sm transition-colors hover:border-emerald-600 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100`}>
       <Languages size={15} aria-hidden="true" />
       <span className="sr-only">Choose language</span>
       <select
-        aria-label="Choose language"
+        aria-label={t("nav.chooseLanguage", { defaultValue: "Choose language" })}
         value={i18n.resolvedLanguage?.split("-")[0] || "en"}
         onChange={(event) => i18n.changeLanguage(event.target.value)}
-        className={`min-w-0 bg-transparent outline-none ${compact ? "flex-1" : "max-w-24"}`}
+        className={`min-w-0 cursor-pointer rounded-md bg-transparent py-1 text-stone-800 outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 dark:text-stone-100 [color-scheme:light] dark:[color-scheme:dark] [&>option]:bg-white [&>option]:text-stone-900 dark:[&>option]:bg-stone-900 dark:[&>option]:text-stone-100 ${compact ? "flex-1" : "max-w-24"}`}
       >
         <option value="en">English</option>
         <option value="hi">हिन्दी</option>
