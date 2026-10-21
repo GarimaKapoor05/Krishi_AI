@@ -6,3 +6,5 @@ __pycache__/
 .DS_Store
 *.env
 Backend/.env
+my_fixes_backup
+diff_output.txt
