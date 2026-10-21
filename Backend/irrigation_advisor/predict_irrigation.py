@@ -7,15 +7,16 @@ import os
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
+_THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 model = None
-model_path = os.path.join('model', 'irrigation_model.joblib')
+model_path = os.path.join(_THIS_DIR, 'model', 'irrigation_model.joblib')
 
 try:
     if os.path.exists(model_path):
         model = joblib.load(model_path)
-        print("✅ Model loaded!")
-except:
-    print("⚠️ Using rule-based system")
+        print("Irrigation ML Model loaded successfully")
+except Exception as e:
+    print(f"Using rule-based system: {e}")
 
 @app.route('/predict', methods=['POST'])
 def predict_irrigation():
@@ -29,7 +30,7 @@ def predict_irrigation():
 
         if model:
             features = np.array([[moisture, humidity, temp, et]])
-            prediction = model.predict(features)[0]
+            prediction = int(model.predict(features)[0])
         else:
             # Advanced rule-based logic
             prediction = 1 if moisture < 40 or (temp > 30 and humidity < 55) else 0
@@ -69,5 +70,5 @@ def predict_irrigation():
         return jsonify({"error": str(e)}), 400
 
 if __name__ == '__main__':
-    print("🚀 Smart Irrigation Advisor Running on http://127.0.0.1:5004")
+    print("Smart Irrigation Advisor Running on http://127.0.0.1:5004")
     app.run(debug=True, port=5004)

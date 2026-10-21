@@ -13,25 +13,69 @@ from zoneinfo import ZoneInfo
 # Typical cycle durations are only used to place a crop on a generalized
 # four-stage curve. Local variety and planting conditions can change these.
 CROPS = {
+    # Cereals
     "wheat":       {"days": 125, "kc": (0.30, 1.15, 0.25), "root": 1.0, "p": 0.55},
     "rice":        {"days": 140, "kc": (1.05, 1.20, 0.90), "root": 0.6, "p": 0.20},
     "paddy":       {"days": 140, "kc": (1.05, 1.20, 0.90), "root": 0.6, "p": 0.20},
     "maize":       {"days": 110, "kc": (0.30, 1.20, 0.60), "root": 1.0, "p": 0.55},
     "corn":        {"days": 110, "kc": (0.30, 1.20, 0.60), "root": 1.0, "p": 0.55},
-    "tomato":      {"days": 135, "kc": (0.60, 1.15, 0.80), "root": 0.8, "p": 0.40},
-    "potato":      {"days": 110, "kc": (0.50, 1.15, 0.75), "root": 0.6, "p": 0.35},
-    "cotton":      {"days": 165, "kc": (0.35, 1.15, 0.70), "root": 1.2, "p": 0.65},
-    "soybean":     {"days": 110, "kc": (0.40, 1.15, 0.50), "root": 0.8, "p": 0.50},
-    "mustard":     {"days": 125, "kc": (0.35, 1.10, 0.35), "root": 1.0, "p": 0.60},
-    "rapeseed":    {"days": 125, "kc": (0.35, 1.10, 0.35), "root": 1.0, "p": 0.60},
-    "sugarcane":   {"days": 300, "kc": (0.40, 1.25, 0.75), "root": 1.2, "p": 0.65},
-    "chickpea":    {"days": 100, "kc": (0.40, 1.00, 0.35), "root": 0.8, "p": 0.50},
-    "groundnut":   {"days": 120, "kc": (0.40, 1.15, 0.60), "root": 0.8, "p": 0.50},
     "millet":      {"days": 90,  "kc": (0.30, 1.00, 0.30), "root": 1.0, "p": 0.55},
     "bajra":       {"days": 90,  "kc": (0.30, 1.00, 0.30), "root": 1.0, "p": 0.55},
+    "sorghum":     {"days": 115, "kc": (0.30, 1.10, 0.55), "root": 1.0, "p": 0.55},
+    "jowar":       {"days": 115, "kc": (0.30, 1.10, 0.55), "root": 1.0, "p": 0.55},
+    "barley":      {"days": 115, "kc": (0.30, 1.15, 0.25), "root": 1.0, "p": 0.55},
+
+    # Pulses and oilseeds
+    "chickpea":    {"days": 100, "kc": (0.40, 1.00, 0.35), "root": 0.8, "p": 0.50},
+    "gram":        {"days": 100, "kc": (0.40, 1.00, 0.35), "root": 0.8, "p": 0.50},
+    "soybean":     {"days": 110, "kc": (0.40, 1.15, 0.50), "root": 0.8, "p": 0.50},
+    "groundnut":   {"days": 120, "kc": (0.40, 1.15, 0.60), "root": 0.8, "p": 0.50},
+    "peanut":      {"days": 120, "kc": (0.40, 1.15, 0.60), "root": 0.8, "p": 0.50},
+    "mustard":     {"days": 125, "kc": (0.35, 1.10, 0.35), "root": 1.0, "p": 0.60},
+    "rapeseed":    {"days": 125, "kc": (0.35, 1.10, 0.35), "root": 1.0, "p": 0.60},
+    "lentil":      {"days": 110, "kc": (0.40, 1.10, 0.40), "root": 0.8, "p": 0.50},
+    "blackgram":   {"days": 85,  "kc": (0.40, 1.05, 0.45), "root": 0.7, "p": 0.50},
+    "mungbean":    {"days": 75,  "kc": (0.40, 1.05, 0.45), "root": 0.7, "p": 0.50},
+    "moong":       {"days": 75,  "kc": (0.40, 1.05, 0.45), "root": 0.7, "p": 0.50},
+    "mothbeans":   {"days": 80,  "kc": (0.35, 1.00, 0.40), "root": 0.7, "p": 0.55},
+    "pigeonpeas":  {"days": 180, "kc": (0.40, 1.10, 0.45), "root": 1.2, "p": 0.50},
+    "arhar":       {"days": 180, "kc": (0.40, 1.10, 0.45), "root": 1.2, "p": 0.50},
+    "tur":         {"days": 180, "kc": (0.40, 1.10, 0.45), "root": 1.2, "p": 0.50},
+    "kidneybeans": {"days": 95,  "kc": (0.40, 1.15, 0.45), "root": 0.8, "p": 0.45},
+    "rajma":       {"days": 95,  "kc": (0.40, 1.15, 0.45), "root": 0.8, "p": 0.45},
+
+    # Vegetables
+    "tomato":      {"days": 135, "kc": (0.60, 1.15, 0.80), "root": 0.8, "p": 0.40},
+    "potato":      {"days": 110, "kc": (0.50, 1.15, 0.75), "root": 0.6, "p": 0.35},
     "onion":       {"days": 130, "kc": (0.70, 1.05, 0.75), "root": 0.4, "p": 0.30},
     "chili":       {"days": 150, "kc": (0.60, 1.05, 0.80), "root": 0.8, "p": 0.40},
+    "chilli":      {"days": 150, "kc": (0.60, 1.05, 0.80), "root": 0.8, "p": 0.40},
     "pepper":      {"days": 150, "kc": (0.60, 1.05, 0.80), "root": 0.8, "p": 0.40},
+    "cabbage":     {"days": 110, "kc": (0.45, 1.05, 0.90), "root": 0.6, "p": 0.45},
+    "cauliflower": {"days": 105, "kc": (0.45, 1.05, 0.90), "root": 0.6, "p": 0.45},
+    "brinjal":     {"days": 130, "kc": (0.60, 1.05, 0.85), "root": 0.8, "p": 0.45},
+    "eggplant":    {"days": 130, "kc": (0.60, 1.05, 0.85), "root": 0.8, "p": 0.45},
+    "okra":        {"days": 90,  "kc": (0.40, 1.00, 0.75), "root": 0.7, "p": 0.50},
+    "bhindi":      {"days": 90,  "kc": (0.40, 1.00, 0.75), "root": 0.7, "p": 0.50},
+    "garlic":      {"days": 130, "kc": (0.70, 1.00, 0.70), "root": 0.4, "p": 0.30},
+
+    # Fruits & Plantation (including Papaya, Melons, Tree Fruits)
+    "papaya":      {"days": 365, "kc": (0.50, 1.05, 0.85), "root": 0.9, "p": 0.40},
+    "watermelon":  {"days": 90,  "kc": (0.40, 1.00, 0.75), "root": 0.8, "p": 0.45},
+    "muskmelon":   {"days": 90,  "kc": (0.45, 1.05, 0.75), "root": 0.8, "p": 0.45},
+    "banana":      {"days": 365, "kc": (0.50, 1.10, 1.00), "root": 0.8, "p": 0.35},
+    "mango":       {"days": 365, "kc": (0.60, 0.85, 0.75), "root": 1.4, "p": 0.50},
+    "orange":      {"days": 365, "kc": (0.65, 0.75, 0.70), "root": 1.2, "p": 0.50},
+    "apple":       {"days": 240, "kc": (0.50, 0.95, 0.75), "root": 1.2, "p": 0.50},
+    "grapes":      {"days": 210, "kc": (0.35, 0.85, 0.60), "root": 1.2, "p": 0.45},
+    "pomegranate": {"days": 365, "kc": (0.50, 0.80, 0.65), "root": 1.2, "p": 0.50},
+    "coconut":     {"days": 365, "kc": (0.70, 0.80, 0.75), "root": 1.5, "p": 0.50},
+
+    # Commercial & Fiber
+    "cotton":      {"days": 165, "kc": (0.35, 1.15, 0.70), "root": 1.2, "p": 0.65},
+    "sugarcane":   {"days": 365, "kc": (0.40, 1.25, 0.75), "root": 1.2, "p": 0.65},
+    "jute":        {"days": 120, "kc": (0.45, 1.10, 0.65), "root": 0.8, "p": 0.50},
+    "coffee":      {"days": 365, "kc": (0.60, 0.95, 0.75), "root": 1.2, "p": 0.50},
 }
 
 # Approximate available water (mm per metre of soil). A field soil test or
@@ -51,8 +95,10 @@ STAGE_LABELS = ("Initial", "Crop development", "Mid-season", "Late season")
 
 def _crop_parameters(name):
     key = "".join(char for char in (name or "").lower() if char.isalpha())
+    if not key:
+        return {"days": 120, "kc": (0.40, 1.10, 0.60), "root": 0.8, "p": 0.50}, False
     for alias, values in CROPS.items():
-        if key == alias or (len(key) > 4 and (key in alias or alias in key)):
+        if key == alias or key.startswith(alias) or alias.startswith(key):
             return values, True
     return {"days": 120, "kc": (0.40, 1.10, 0.60), "root": 0.8, "p": 0.50}, False
 
@@ -121,7 +167,8 @@ def calculate_schedule(payload):
     crop, crop_supported = _crop_parameters(crop_name)
     age_days = (today - sowing_date).days
     if age_days >= crop["days"]:
-        raise ValueError("The estimated crop cycle is complete. Update the crop or planting date in your farm profile.")
+        # If crop duration is reached, evaluate in late-season/mature stage
+        age_days = max(0, crop["days"] - 1)
 
     soil_awc = SOIL_AWC.get(soil_type, SOIL_AWC["unknown"])
     max_root = crop["root"]

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowDown, ArrowRight, CalendarDays, CloudSun, Landmark, LineChart, MapPin, ShieldCheck, Sprout, Store } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../context/AuthContext";
 
 const services = [
   { key: "calendar", icon: CalendarDays, to: "/onboarding", tone: "bg-emerald-50 text-emerald-800" },
@@ -48,6 +49,8 @@ function FieldIllustration({ t }) {
 
 export default function LandingPage() {
   const { t } = useTranslation();
+  const { isLoggedIn } = useAuth();
+  const setupHref = isLoggedIn ? "/dashboard" : "/onboarding";
   const reduceMotion = useReducedMotion();
 
   return (
@@ -64,8 +67,8 @@ export default function LandingPage() {
             </h1>
             <p className="mt-6 max-w-xl text-base leading-7 text-stone-600 dark:text-stone-300 sm:text-lg sm:leading-8">{t("landing.description")}</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link to="/onboarding" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-800 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-950/10 transition hover:-translate-y-0.5 hover:bg-emerald-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700">
-                {t("landing.cta")}<ArrowRight size={17} aria-hidden="true" />
+              <Link to={setupHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-800 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-950/10 transition hover:-translate-y-0.5 hover:bg-emerald-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700">
+                {isLoggedIn ? t("nav.dashboard", { defaultValue: t("landing.cta") }) : t("landing.cta")}<ArrowRight size={17} aria-hidden="true" />
               </Link>
               <a href="#farmer-tools" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white/80 px-5 py-3 text-sm font-semibold text-stone-800 transition hover:border-emerald-700 hover:text-emerald-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100">
                 {t("landing.explore")}<ArrowDown size={16} aria-hidden="true" />
@@ -103,7 +106,7 @@ export default function LandingPage() {
       <section className="px-4 py-12 sm:px-6 sm:py-16">
         <div className="mx-auto flex max-w-7xl flex-col gap-5 rounded-3xl bg-emerald-950 px-6 py-8 text-white sm:flex-row sm:items-center sm:justify-between sm:px-9 sm:py-9">
           <div className="max-w-2xl"><p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-300">{t("landing.nextStepEyebrow")}</p><h2 className="mt-2 text-xl font-bold tracking-tight sm:text-2xl">{t("landing.nextStepTitle")}</h2><p className="mt-2 text-sm leading-6 text-emerald-100/80">{t("landing.nextStepDescription")}</p></div>
-          <Link to="/onboarding" className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-emerald-950 transition hover:bg-emerald-50">{t("landing.cta")}<ArrowRight size={16} /></Link>
+          <Link to={setupHref} className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-emerald-950 transition hover:bg-emerald-50">{isLoggedIn ? t("nav.dashboard", { defaultValue: t("landing.cta") }) : t("landing.cta")}<ArrowRight size={16} /></Link>
         </div>
       </section>
     </div>

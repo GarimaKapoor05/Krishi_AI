@@ -14,6 +14,7 @@ export function CropRecommendationPanel({ farmLocation, soilNutrients, soilTestD
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [recommendation, setRecommendation] = useState(null);
+  const [cropGroup, setCropGroup] = useState("any_field_crop");
   const requestId = useRef(0);
 
   useEffect(() => {
@@ -31,6 +32,7 @@ export function CropRecommendationPanel({ farmLocation, soilNutrients, soilTestD
     soilNutrients?.ph,
     plannedSowingPeriod,
     farmingSeason,
+    cropGroup,
   ]);
 
   const runRecommendation = async () => {
@@ -65,6 +67,7 @@ export function CropRecommendationPanel({ farmLocation, soilNutrients, soilTestD
         temperature: climate.temperature,
         humidity: climate.humidity,
         rainfall: climate.rainfall,
+        crop_group: cropGroup,
       });
       const saved = {
         ...result,
@@ -102,6 +105,17 @@ export function CropRecommendationPanel({ farmLocation, soilNutrients, soilTestD
           </p>
           {soilTestDone !== "yes" && <p className="mt-1 text-xs font-medium text-amber-800">A laboratory soil test is needed before this model can run. A soil photo cannot provide these measurements.</p>}
           {farmingSeason === "year_round" && <p className="mt-1 text-xs font-medium text-amber-800">Choose a target Kharif, Rabi, or Zaid season before requesting a crop shortlist.</p>}
+          <label className="mt-3 block max-w-md text-xs font-semibold text-stone-700">
+            What would you like to grow?
+            <select value={cropGroup} onChange={(event) => { setCropGroup(event.target.value); setRecommendation(null); onRecommendation(null); }} className="mt-1.5 min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm font-medium text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700">
+              <option value="any_field_crop">Any seasonal field crop (no tree crops)</option>
+              <option value="cereals">Cereals (rice, maize)</option>
+              <option value="pulses">Pulses / gram</option>
+              <option value="oilseeds">Oilseeds (soybean)</option>
+              <option value="ground_fruits">Ground-growing fruits (watermelon, muskmelon)</option>
+            </select>
+          </label>
+          <p className="mt-1 max-w-2xl text-[11px] leading-relaxed text-stone-500">The current Kaggle dataset contains no vegetable labels such as tomato or potato. It cannot support vegetable suggestions yet; we will not substitute tree crops for them.</p>
         </div>
       </div>
 
@@ -119,10 +133,7 @@ export function CropRecommendationPanel({ farmLocation, soilNutrients, soilTestD
 
       {recommendation && (
         <div className="space-y-2 rounded-lg bg-emerald-50 p-3" aria-live="polite">
-          <p className="text-sm font-bold text-emerald-950">
-            Top dataset match: <span className="capitalize">{recommendation.recommended_crop}</span>
-            <span className="ml-2 font-medium">(model score: {recommendation.confidence}/100)</span>
-          </p>
+          <p className="text-sm font-bold text-emerald-950">Experimental crop shortlist for your selected group</p>
           <div>
             <p className="mb-2 text-xs font-semibold text-stone-700">Choose a crop for your plan</p>
             <div className="flex flex-wrap gap-2" role="group" aria-label="Choose a crop from the model suggestions">
@@ -140,14 +151,14 @@ export function CropRecommendationPanel({ farmLocation, soilNutrients, soilTestD
                         : "border-emerald-200 bg-white text-stone-700 hover:bg-emerald-100"
                     }`}
                   >
-                    {item.crop} · score {item.confidence}/100{isSelected ? " · Selected" : ""}
+                    {item.crop}{isSelected ? " · Selected" : ""}
                   </button>
                 );
               })}
             </div>
           </div>
           <p className="text-[11px] text-stone-600">
-            Climate basis: {recommendation.weather_source}, using {recommendation.climate_seasons_used} complete {recommendation.farming_season} seasons for {recommendation.weather_location}.
+            Climate basis: {recommendation.weather_source}, using {recommendation.climate_seasons_used} complete {recommendation.farming_season} seasons for {recommendation.weather_location}. Results are limited to the selected crop group.
           </p>
           <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-stone-600">
             <AlertTriangle size={13} className="mt-0.5 shrink-0" />

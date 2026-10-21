@@ -10,10 +10,12 @@ import { Step4Review } from "../components/onboarding/Step4Review";
 import { Step5Success } from "../components/onboarding/Step5Success";
 import { useFarmerOnboarding } from "../hooks/useFarmerOnboarding";
 import { createOnboardingAccount } from "../services/onboardingServices";
+import { useTranslation } from "react-i18next";
 
 export default function Onboarding() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { t, i18n } = useTranslation();
   const editExistingProfile = searchParams.get("edit") === "1";
   const { login, isLoggedIn, user } = useAuth();
   const profileMode = editExistingProfile || isLoggedIn;
@@ -26,14 +28,22 @@ export default function Onboarding() {
   });
 
   return (
-    <div className="min-h-screen bg-[#FAF9F5] text-stone-800 flex flex-col">
-      <header className="h-16 border-b border-stone-200 bg-white">
+    <div className="min-h-screen bg-[#FAF9F5] text-stone-800 dark:bg-stone-950 dark:text-stone-100 flex flex-col">
+      <header className="h-16 border-b border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900">
         <div className="mx-auto flex h-full max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link to="/" className="inline-flex items-center gap-2.5 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-800" aria-label="Krishi AI home">
+          <Link to="/" className="inline-flex items-center gap-2.5 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-800" aria-label={t("nav.home", { defaultValue: "Krishi AI home" })}>
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-900 text-emerald-100"><Sprout className="h-5 w-5" aria-hidden="true" /></span>
-            <span className="font-bold tracking-tight text-emerald-950">Krishi AI</span>
+            <span className="font-bold tracking-tight text-emerald-950 dark:text-emerald-100">Krishi AI</span>
           </Link>
-          <Link to="/login" className="text-sm font-semibold text-emerald-900 hover:underline underline-offset-4">Already registered? Log in</Link>
+          <div className="flex items-center gap-3">
+            <label className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-stone-300 bg-[#faf9f5] px-2.5 text-xs font-semibold text-stone-800 dark:border-stone-600 dark:bg-stone-950 dark:text-stone-100">
+              <span className="sr-only">{t("nav.chooseLanguage", { defaultValue: "Choose language" })}</span>
+              <select aria-label={t("nav.chooseLanguage", { defaultValue: "Choose language" })} value={i18n.resolvedLanguage?.split("-")[0] || "en"} onChange={(event) => i18n.changeLanguage(event.target.value)} className="cursor-pointer bg-transparent py-1 outline-none [color-scheme:light] dark:[color-scheme:dark] [&>option]:bg-white [&>option]:text-stone-900 dark:[&>option]:bg-stone-900 dark:[&>option]:text-white">
+                <option value="en">English</option><option value="hi">हिन्दी</option><option value="ta">தமிழ்</option><option value="ur">اردو</option>
+              </select>
+            </label>
+            <Link to="/login" className="text-sm font-semibold text-emerald-900 hover:underline underline-offset-4 dark:text-emerald-300">{t("onboarding.loginLink", { defaultValue: "Already registered? Log in" })}</Link>
+          </div>
         </div>
       </header>
 
@@ -113,7 +123,7 @@ export default function Onboarding() {
         </div>
       </main>
 
-      <footer className="border-t border-stone-200 bg-white px-4 py-4 text-center text-xs text-stone-500">
+      <footer className="border-t border-stone-200 bg-white px-4 py-4 text-center text-xs text-stone-500 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-400">
         The full farm profile is saved in this browser in Phase 1; backend profile storage is not implemented yet.
       </footer>
     </div>

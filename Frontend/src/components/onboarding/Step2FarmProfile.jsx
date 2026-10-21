@@ -209,9 +209,12 @@ export function Step2FarmProfile({
                 step="0.1"
                 min="0.1"
                 value={farmLocation.farmSize}
-                onChange={(e) => onChange({ farmSize: e.target.value })}
+                onChange={(e) => {
+                  if (e.target.value !== "" && Number(e.target.value) < 0) return;
+                  onChange({ farmSize: e.target.value });
+                }}
                 placeholder="e.g. 5.0"
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-all outline-none ${
+                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm text-stone-900 dark:text-stone-100 bg-white dark:bg-stone-900 transition-all outline-none ${
                   errors.farmSize
                     ? "border-red-400 bg-red-50/30 focus:border-red-500 focus:ring-2 focus:ring-red-100"
                     : "border-brand-border focus:border-brand-green focus:ring-2 focus:ring-brand-mint/50"
