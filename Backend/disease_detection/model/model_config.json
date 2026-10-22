@@ -1,0 +1,7 @@
+{
+  "model_file": "plant_disease_mobilenetv2.tflite",
+  "input_size": 224,
+  "preprocessing": "none",
+  "confidence_threshold": 0.6,
+  "top_k": 3
+}

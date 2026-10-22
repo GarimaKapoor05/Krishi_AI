@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import Navbar from "./components/Navbar";
@@ -17,9 +17,11 @@ import GovSchemeAdvisor from "./pages/GovSchemeAdvisor";
 import BuyerDashboard from "./pages/BuyerDashboard";
 import SellerDashboard from "./pages/SellerDashboard";
 import SmartIrrigationAdvisor from "./pages/SmartIrrigationAdvisor";
+import { DiseaseDetectionPage } from "./pages/DiseaseDetectionPage";
 
 function App() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const isOnboarding = pathname === "/onboarding";
   const isLanding = pathname === "/";
 
@@ -45,6 +47,8 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* Feature: Crop Disease Detection (MobileNetV2) */}
+          <Route path="/features/disease-detection" element={<DiseaseDetectionPage onBackToDashboard={() => navigate("/dashboard")} />} />
 
           {/* Preserved Feature: Mandi Prices */}
           <Route path="/features/market-intelligence" element={<MarketIntelligence />} />
@@ -78,8 +82,8 @@ function App() {
           <Route path="/crop-prediction" element={<Navigate to="/dashboard" replace />} />
           <Route path="/fertilizer-prediction" element={<Navigate to="/dashboard" replace />} />
           <Route path="/features/price-prediction" element={<Navigate to="/features/market-intelligence" replace />} />
-          <Route path="/disease-detection" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/disease-ai" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/disease-detection" element={<Navigate to="/features/disease-detection" replace />} />
+          <Route path="/disease-ai" element={<Navigate to="/features/disease-detection" replace />} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -15,6 +15,7 @@ from auth import auth_bp
 from models import bcrypt
 from marketplace import mp_bp
 from market_intel import mi_bp
+from disease import disease_bp
 
 # Ensure the local instance folder exists for the SQLite fallback DB
 os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), "instance"),
@@ -88,6 +89,8 @@ app.register_blueprint(mp_bp)
 
 # Register Market Intelligence Blueprint (prices, trends, forecasts, sell/hold)
 app.register_blueprint(mi_bp)
+
+app.register_blueprint(disease_bp)
 
 with app.app_context():
     try:

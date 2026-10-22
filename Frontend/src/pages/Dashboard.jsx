@@ -14,6 +14,7 @@ import {
   ArrowRight,
   Loader2,
   RefreshCw,
+  Leaf,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { getFarmWeather } from "../services/weatherLocation";
@@ -415,7 +416,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+          <div className="grid sm:grid-cols-2 xl:grid-cols-5 gap-3">
             <Link
               to="/features/market-intelligence"
               className="group flex min-h-32 flex-col justify-between rounded-xl border border-stone-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-emerald-500 dark:border-stone-800 dark:bg-stone-900"
@@ -478,6 +479,22 @@ export default function Dashboard() {
                 <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300"><Droplets size={16} /></div>
                 <h4 className="text-sm font-semibold text-stone-900 transition-colors group-hover:text-emerald-700 dark:text-white">{t("farmerDashboard.irrigationAdvisor")}</h4>
                 <p className="mt-1 text-[11px] leading-relaxed text-stone-500 dark:text-stone-400">{t("farmerDashboard.irrigationAdvisorText")}</p>
+              </div>
+              <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">{t("farmerDashboard.openTool")} <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" /></span>
+            </Link>
+
+            <Link
+              to="/features/disease-detection"
+              className="group flex min-h-32 flex-col justify-between rounded-xl border border-stone-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-emerald-500 dark:border-stone-800 dark:bg-stone-900"
+            >
+              <div>
+                <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"><Leaf size={16} /></div>
+                <h4 className="text-sm font-semibold text-stone-900 transition-colors group-hover:text-emerald-700 dark:text-white">
+                  {t("farmerDashboard.diseaseDetection", { defaultValue: "Crop Disease Detection" })}
+                </h4>
+                <p className="mt-1 text-[11px] leading-relaxed text-stone-500 dark:text-stone-400">
+                  {t("farmerDashboard.diseaseDetectionText", { defaultValue: "Photograph a leaf to identify the disease and get remedies." })}
+                </p>
               </div>
               <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">{t("farmerDashboard.openTool")} <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" /></span>
             </Link>

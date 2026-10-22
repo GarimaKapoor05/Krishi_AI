@@ -1,0 +1,402 @@
+{
+  "Apple___Apple_scab": {
+    "display_name": "Apple Scab",
+    "symptoms": "Olive-green to dark brown, velvety spots on leaves and fruit; leaves may yellow and drop early.",
+    "organic_remedies": [
+      "Rake up and destroy fallen leaves in autumn to reduce spores for next season.",
+      "Prune the canopy so leaves dry quickly after rain.",
+      "Sulfur-based sprays during early leaf growth can protect new leaves."
+    ],
+    "chemical_remedies": [
+      "Protectant fungicides applied from green-tip stage are used for scab; ask your agriculture officer for an approved product and schedule."
+    ],
+    "prevention": [
+      "Choose scab-resistant varieties when replanting.",
+      "Avoid overhead irrigation."
+    ]
+  },
+  "Apple___Black_rot": {
+    "display_name": "Apple Black Rot",
+    "symptoms": "Small purple spots on leaves that grow into brown 'frogeye' lesions; fruit rots and shrivels into black mummies; cankers on branches.",
+    "organic_remedies": [
+      "Prune out dead wood and cankers and burn or bury them.",
+      "Remove mummified fruit from the tree and the ground.",
+      "Keep the canopy open so foliage dries fast."
+    ],
+    "chemical_remedies": [
+      "Protectant fungicide sprays from bloom through early summer are commonly used; confirm product and dose locally."
+    ],
+    "prevention": [
+      "Disinfect pruning tools between cuts.",
+      "Keep trees well watered and fed to reduce stress."
+    ]
+  },
+  "Apple___Cedar_apple_rust": {
+    "display_name": "Cedar Apple Rust",
+    "symptoms": "Bright yellow-orange spots on the upper leaf surface, later with small tube-like growths underneath; fruit may be spotted.",
+    "organic_remedies": [
+      "Remove nearby juniper or red cedar trees that carry the alternate stage of the fungus, where practical.",
+      "Remove and destroy badly infected leaves."
+    ],
+    "chemical_remedies": [
+      "Fungicides are usually timed from pink bud to a few weeks after petal fall; confirm product and timing locally."
+    ],
+    "prevention": [
+      "Plant rust-resistant apple varieties."
+    ]
+  },
+  "Cherry_(including_sour)___Powdery_mildew": {
+    "display_name": "Cherry Powdery Mildew",
+    "symptoms": "White powdery patches on leaves and shoot tips; leaves may curl, thicken or distort.",
+    "organic_remedies": [
+      "Sulfur or neem-oil sprays at first sign can slow spread.",
+      "Prune to open the canopy and remove badly infected shoots.",
+      "Avoid excess nitrogen, which pushes soft growth that mildew prefers."
+    ],
+    "chemical_remedies": [
+      "Several systemic and contact fungicides are registered for powdery mildew; ask your agriculture officer which one suits your stage and region."
+    ],
+    "prevention": [
+      "Keep good airflow and avoid dense planting."
+    ]
+  },
+  "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": {
+    "display_name": "Gray Leaf Spot (Maize)",
+    "symptoms": "Narrow, rectangular tan to gray lesions running parallel to the leaf veins, mostly on lower and middle leaves first.",
+    "organic_remedies": [
+      "Rotate with a non-cereal crop and bury or remove infected crop residue after harvest.",
+      "Avoid planting maize after maize in the same field.",
+      "Improve spacing and drainage to reduce long periods of leaf wetness."
+    ],
+    "chemical_remedies": [
+      "Foliar fungicide is considered when lesions reach the upper leaves before tasseling; ask your agriculture officer about product and timing."
+    ],
+    "prevention": [
+      "Choose hybrids with tolerance to gray leaf spot."
+    ]
+  },
+  "Corn_(maize)___Common_rust_": {
+    "display_name": "Common Rust (Maize)",
+    "symptoms": "Small, round to oval, brick-red to brown powdery pustules on both sides of the leaf.",
+    "organic_remedies": [
+      "Plant resistant or tolerant hybrids.",
+      "Plant early where possible, since late-planted crops are hit harder.",
+      "Scout regularly; mild infections often need no treatment."
+    ],
+    "chemical_remedies": [
+      "Fungicide is only worth considering if rust is heavy on young plants; confirm with your agriculture officer."
+    ],
+    "prevention": [
+      "Rotate crops and manage residue."
+    ]
+  },
+  "Corn_(maize)___Northern_Leaf_Blight": {
+    "display_name": "Northern Leaf Blight (Maize)",
+    "symptoms": "Long, cigar-shaped gray-green to tan lesions, usually 2-15 cm, starting on lower leaves and moving up.",
+    "organic_remedies": [
+      "Rotate crops and bury or remove infected residue after harvest.",
+      "Use resistant hybrids.",
+      "Avoid dense planting."
+    ],
+    "chemical_remedies": [
+      "Foliar fungicide may be justified when lesions appear before or around tasseling; confirm product and dose locally."
+    ],
+    "prevention": [
+      "Plant resistant hybrids and rotate fields."
+    ]
+  },
+  "Grape___Black_rot": {
+    "display_name": "Grape Black Rot",
+    "symptoms": "Tan leaf spots with a dark border and tiny black dots; berries turn brown, then shrivel into hard black mummies.",
+    "organic_remedies": [
+      "Remove mummified berries and infected canes during winter pruning.",
+      "Open the canopy with shoot thinning and leaf removal near fruit.",
+      "Copper or sulfur sprays can help in organic systems where permitted."
+    ],
+    "chemical_remedies": [
+      "Protectant or systemic fungicides are used from early shoot growth to fruit set; ask for an approved schedule."
+    ],
+    "prevention": [
+      "Keep vineyard floor clean and trellis vines for airflow."
+    ]
+  },
+  "Grape___Esca_(Black_Measles)": {
+    "display_name": "Grape Esca (Black Measles)",
+    "symptoms": "Tiger-stripe pattern of yellow or red-brown between leaf veins; dark spots on berries; wood shows dark streaks inside.",
+    "organic_remedies": [
+      "There is no cure. Prune out infected wood during dry weather and burn it.",
+      "Protect pruning wounds with a sealant or wound protectant.",
+      "Remove vines that are severely affected so they do not infect neighbours."
+    ],
+    "chemical_remedies": [
+      "No spray reliably cures esca; discuss wound-protection options with your agriculture officer."
+    ],
+    "prevention": [
+      "Prune late in the dormant season and avoid large pruning wounds.",
+      "Plant clean, certified vines."
+    ]
+  },
+  "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": {
+    "display_name": "Grape Leaf Blight (Isariopsis Leaf Spot)",
+    "symptoms": "Irregular dark brown spots on leaves, often with a yellow halo; heavily affected leaves dry and fall early.",
+    "organic_remedies": [
+      "Remove fallen leaves and infected foliage.",
+      "Improve airflow with canopy management.",
+      "Bordeaux mixture or copper sprays are traditionally used where permitted."
+    ],
+    "chemical_remedies": [
+      "Protectant fungicides are used during wet periods; confirm product and dose locally."
+    ],
+    "prevention": [
+      "Avoid overhead irrigation and over-crowded vines."
+    ]
+  },
+  "Orange___Haunglongbing_(Citrus_greening)": {
+    "display_name": "Citrus Greening (Huanglongbing)",
+    "symptoms": "Blotchy yellow mottling of leaves that does not follow the veins evenly, small lopsided bitter fruit, and twig dieback.",
+    "organic_remedies": [
+      "There is no cure. Remove and destroy infected trees so the disease does not spread.",
+      "Control the Asian citrus psyllid insect that carries the bacterium, using yellow sticky traps and neem-based sprays on new flushes."
+    ],
+    "chemical_remedies": [
+      "Insecticides targeting the psyllid are the main chemical tool; ask your agriculture officer for approved products."
+    ],
+    "prevention": [
+      "Plant only certified disease-free nursery stock.",
+      "Report suspected cases to your local agriculture or horticulture department."
+    ]
+  },
+  "Peach___Bacterial_spot": {
+    "display_name": "Peach Bacterial Spot",
+    "symptoms": "Small angular dark spots on leaves that may fall out leaving 'shot holes'; sunken dark spots and cracking on fruit.",
+    "organic_remedies": [
+      "Prune for airflow and avoid overhead irrigation.",
+      "Copper sprays during dormancy or early season can reduce spread where permitted.",
+      "Avoid excess nitrogen."
+    ],
+    "chemical_remedies": [
+      "Bactericide programmes exist but control is partial; ask your agriculture officer about options."
+    ],
+    "prevention": [
+      "Plant tolerant varieties and use clean planting material."
+    ]
+  },
+  "Pepper,_bell___Bacterial_spot": {
+    "display_name": "Bell Pepper Bacterial Spot",
+    "symptoms": "Small water-soaked spots on leaves that turn brown with a yellow edge; raised scabby spots on fruit.",
+    "organic_remedies": [
+      "Remove and destroy infected plants and avoid working in the field when leaves are wet.",
+      "Copper-based sprays can slow spread where permitted.",
+      "Water at the base of plants rather than overhead."
+    ],
+    "chemical_remedies": [
+      "Copper-based bactericides are commonly used; confirm product and dose locally."
+    ],
+    "prevention": [
+      "Use certified disease-free seed or seedlings.",
+      "Rotate with non-solanaceous crops for at least 2 years."
+    ]
+  },
+  "Potato___Early_blight": {
+    "display_name": "Potato Early Blight",
+    "symptoms": "Dark brown spots with concentric rings (target pattern) on older leaves first, often with yellowing around them.",
+    "organic_remedies": [
+      "Remove badly infected lower leaves and destroy them.",
+      "Mulch to stop soil splashing onto leaves.",
+      "Keep plants well fed and watered; stressed plants get blight more easily."
+    ],
+    "chemical_remedies": [
+      "Protectant fungicides are used on a regular schedule in wet weather; confirm product and dose with your agriculture officer."
+    ],
+    "prevention": [
+      "Rotate crops for 2-3 years and use certified seed tubers.",
+      "Destroy volunteer potato and weed hosts."
+    ]
+  },
+  "Potato___Late_blight": {
+    "display_name": "Potato Late Blight",
+    "symptoms": "Large water-soaked dark patches on leaves, with white fuzzy growth underneath in humid weather; stems and tubers can rot. Spreads very fast.",
+    "organic_remedies": [
+      "Act quickly: remove and destroy infected plants away from the field.",
+      "Avoid overhead irrigation and irrigate early in the day.",
+      "Hill up soil to protect tubers and delay harvest until haulms are fully dead."
+    ],
+    "chemical_remedies": [
+      "Late blight needs prompt fungicide protection in cool, humid weather; contact your agriculture officer urgently for product and schedule."
+    ],
+    "prevention": [
+      "Plant certified seed tubers and resistant varieties.",
+      "Do not leave cull potatoes lying around the field."
+    ]
+  },
+  "Squash___Powdery_mildew": {
+    "display_name": "Squash Powdery Mildew",
+    "symptoms": "White powdery coating on the upper surface of leaves and on stems; leaves yellow and dry out.",
+    "organic_remedies": [
+      "Spray sulfur or neem oil at first sign, covering both sides of leaves.",
+      "Remove badly infected leaves.",
+      "Space plants widely for airflow."
+    ],
+    "chemical_remedies": [
+      "Several fungicides are registered for powdery mildew on cucurbits; confirm product and dose locally."
+    ],
+    "prevention": [
+      "Plant tolerant varieties and avoid crowding."
+    ]
+  },
+  "Strawberry___Leaf_scorch": {
+    "display_name": "Strawberry Leaf Scorch",
+    "symptoms": "Many small purple spots on leaves that grow together; centres turn brown or gray and leaf edges look scorched.",
+    "organic_remedies": [
+      "Remove and destroy infected leaves, especially after harvest.",
+      "Avoid overhead watering and do not over-crowd plants.",
+      "Renovate old beds and replace plants that are heavily affected."
+    ],
+    "chemical_remedies": [
+      "Fungicides can be used during wet periods; ask your agriculture officer for an approved option."
+    ],
+    "prevention": [
+      "Plant disease-free runners and resistant varieties."
+    ]
+  },
+  "Tomato___Bacterial_spot": {
+    "display_name": "Tomato Bacterial Spot",
+    "symptoms": "Small dark, greasy-looking spots on leaves that may have a yellow halo; rough scabby spots on fruit.",
+    "organic_remedies": [
+      "Remove infected plants and avoid handling plants when wet.",
+      "Copper-based sprays can slow spread where permitted.",
+      "Water at the base and use mulch."
+    ],
+    "chemical_remedies": [
+      "Copper-based bactericides are commonly used with limited effect in heavy outbreaks; confirm product and dose locally."
+    ],
+    "prevention": [
+      "Use certified disease-free seed and rotate crops for 2-3 years.",
+      "Clean tools and stakes between seasons."
+    ]
+  },
+  "Tomato___Early_blight": {
+    "display_name": "Tomato Early Blight",
+    "symptoms": "Brown spots with concentric rings on older leaves, with yellowing around them; can spread to stems and fruit.",
+    "organic_remedies": [
+      "Remove infected lower leaves and destroy them.",
+      "Mulch around plants and stake them to keep leaves off the soil.",
+      "Water at the base and avoid wetting leaves."
+    ],
+    "chemical_remedies": [
+      "Protectant fungicides are used on a regular schedule in humid weather; confirm product and dose locally."
+    ],
+    "prevention": [
+      "Rotate crops for 2-3 years and clear plant debris after harvest."
+    ]
+  },
+  "Tomato___Late_blight": {
+    "display_name": "Tomato Late Blight",
+    "symptoms": "Large greasy gray-green to brown patches on leaves, white mould underneath in humid weather, dark firm patches on fruit. Spreads very fast.",
+    "organic_remedies": [
+      "Act quickly: remove and destroy infected plants away from the field.",
+      "Avoid overhead irrigation and improve airflow.",
+      "Do not compost infected plants."
+    ],
+    "chemical_remedies": [
+      "Late blight needs prompt fungicide protection in cool, humid weather; contact your agriculture officer urgently for product and schedule."
+    ],
+    "prevention": [
+      "Use resistant varieties and certified seedlings.",
+      "Keep potato and tomato plots apart where possible."
+    ]
+  },
+  "Tomato___Leaf_Mold": {
+    "display_name": "Tomato Leaf Mold",
+    "symptoms": "Pale yellow patches on the upper leaf surface with olive-green to gray velvety mould underneath.",
+    "organic_remedies": [
+      "Lower humidity: increase ventilation, space plants and avoid wetting leaves.",
+      "Remove infected leaves and destroy them.",
+      "Water in the morning so leaves dry quickly."
+    ],
+    "chemical_remedies": [
+      "Fungicides are used if humidity cannot be reduced; confirm product and dose locally."
+    ],
+    "prevention": [
+      "Use resistant varieties, especially in polyhouses.",
+      "Clean greenhouse structures between crops."
+    ]
+  },
+  "Tomato___Septoria_leaf_spot": {
+    "display_name": "Tomato Septoria Leaf Spot",
+    "symptoms": "Many small circular spots with gray-white centres and dark edges, usually starting on lower leaves; leaves yellow and drop.",
+    "organic_remedies": [
+      "Remove infected lower leaves and destroy them.",
+      "Mulch to prevent soil splash and stake plants.",
+      "Water at the base, not on leaves."
+    ],
+    "chemical_remedies": [
+      "Protectant fungicides are used from the first spots; confirm product and dose locally."
+    ],
+    "prevention": [
+      "Rotate crops for at least 2 years and clean up debris after harvest."
+    ]
+  },
+  "Tomato___Spider_mites Two-spotted_spider_mite": {
+    "display_name": "Spider Mites (Tomato)",
+    "symptoms": "Tiny yellow or white speckling on leaves, bronzing, and fine webbing underneath in hot dry weather.",
+    "organic_remedies": [
+      "Spray leaves (especially undersides) with water to knock mites off.",
+      "Neem oil or insecticidal soap sprays reduce populations.",
+      "Encourage natural predators and avoid broad-spectrum insecticides that kill them."
+    ],
+    "chemical_remedies": [
+      "Miticides are a last resort; ask your agriculture officer for a registered product and rotate modes of action."
+    ],
+    "prevention": [
+      "Keep plants well watered in hot weather and control dusty conditions and weeds nearby."
+    ]
+  },
+  "Tomato___Target_Spot": {
+    "display_name": "Tomato Target Spot",
+    "symptoms": "Brown spots with concentric rings and a yellow halo on leaves; can also spot stems and fruit.",
+    "organic_remedies": [
+      "Remove infected leaves and plant debris.",
+      "Stake and prune plants for better airflow.",
+      "Avoid overhead irrigation."
+    ],
+    "chemical_remedies": [
+      "Protectant fungicides are used on a schedule in humid weather; confirm product and dose locally."
+    ],
+    "prevention": [
+      "Rotate crops and avoid planting too densely."
+    ]
+  },
+  "Tomato___Tomato_Yellow_Leaf_Curl_Virus": {
+    "display_name": "Tomato Yellow Leaf Curl Virus",
+    "symptoms": "Leaves curl upward and turn yellow at the edges, plants are stunted, and flowers drop with little fruit set. Spread by whiteflies.",
+    "organic_remedies": [
+      "There is no cure. Remove and destroy infected plants early.",
+      "Control whiteflies with yellow sticky traps, neem-based sprays and insect-proof nets on nurseries.",
+      "Remove weeds that host whiteflies."
+    ],
+    "chemical_remedies": [
+      "Insecticides targeting whiteflies are the main chemical tool; ask your agriculture officer for approved products and rotation."
+    ],
+    "prevention": [
+      "Plant virus-resistant varieties and use virus-free seedlings.",
+      "Use reflective mulch to deter whiteflies."
+    ]
+  },
+  "Tomato___Tomato_mosaic_virus": {
+    "display_name": "Tomato Mosaic Virus",
+    "symptoms": "Mottled light and dark green patches on leaves, curled or fern-like distorted leaves, and stunted growth.",
+    "organic_remedies": [
+      "There is no cure. Remove and destroy infected plants.",
+      "Wash hands with soap and disinfect tools after handling plants.",
+      "Do not handle plants after using tobacco products."
+    ],
+    "chemical_remedies": [
+      "No spray cures virus diseases; focus on hygiene and resistant varieties."
+    ],
+    "prevention": [
+      "Use certified virus-free seed and resistant varieties.",
+      "Clear old plant debris and weeds and rotate crops."
+    ]
+  }
+}

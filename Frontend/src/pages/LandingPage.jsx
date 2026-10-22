@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowDown, ArrowRight, CalendarDays, CloudSun, Landmark, LineChart, MapPin, ShieldCheck, Sprout, Store } from "lucide-react";
+import { ArrowDown, ArrowRight, CalendarDays, CloudSun, Landmark, LineChart, MapPin, ShieldCheck, Sprout, Store, Leaf } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
@@ -10,6 +10,14 @@ const services = [
   { key: "market", icon: LineChart, to: "/features/market-intelligence", tone: "bg-amber-50 text-amber-800" },
   { key: "schemes", icon: Landmark, to: "/features/schemes", tone: "bg-violet-50 text-violet-800" },
   { key: "marketplace", icon: Store, to: "/marketplace", tone: "bg-rose-50 text-rose-800" },
+  {
+    key: "disease",
+    icon: Leaf,
+    to: "/features/disease-detection",
+    tone: "bg-lime-50 text-lime-800",
+    title: "Crop disease detection",
+    description: "Photograph a leaf to identify the disease and get remedies.",
+  },
 ];
 
 function FieldIllustration({ t }) {
@@ -88,13 +96,13 @@ export default function LandingPage() {
             <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800 dark:text-emerald-300">{t("landing.toolsEyebrow")}</p><h2 className="mt-2 max-w-2xl text-2xl font-bold tracking-tight text-stone-950 dark:text-white sm:text-3xl">{t("landing.toolsTitle")}</h2></div>
             <p className="max-w-md text-sm leading-6 text-stone-600 dark:text-stone-400">{t("landing.toolsDescription")}</p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {services.map(({ key, icon: Icon, to, tone }, index) => (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {services.map(({ key, icon: Icon, to, tone, title, description }, index) => (
               <motion.div key={key} initial={reduceMotion ? false : { opacity: 0, y: 12 }} whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.25 }} transition={{ duration: 0.35, delay: index * 0.04 }}>
                 <Link to={to} className="group flex h-full min-h-44 flex-col rounded-2xl border border-stone-200 bg-white p-4 transition duration-200 hover:-translate-y-1 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-950/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 dark:border-stone-800 dark:bg-stone-900 dark:hover:border-emerald-800 sm:p-5">
                   <span className={`mb-5 grid h-11 w-11 place-items-center rounded-xl ${tone} dark:bg-emerald-950/60 dark:text-emerald-300`}><Icon size={20} /></span>
-                  <span className="text-sm font-bold text-stone-900 dark:text-white">{t(`landing.tools.${key}.title`)}</span>
-                  <span className="mt-1.5 flex-1 text-xs leading-relaxed text-stone-500 dark:text-stone-400">{t(`landing.tools.${key}.description`)}</span>
+                  <span className="text-sm font-bold text-stone-900 dark:text-white">{t(`landing.tools.${key}.title`, { defaultValue: title })}</span>
+                  <span className="mt-1.5 flex-1 text-xs leading-relaxed text-stone-500 dark:text-stone-400">{t(`landing.tools.${key}.description`, { defaultValue: description })}</span>
                   <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-emerald-800 dark:text-emerald-300">{t("landing.learnMore")}<ArrowRight size={13} className="transition-transform group-hover:translate-x-1" /></span>
                 </Link>
               </motion.div>

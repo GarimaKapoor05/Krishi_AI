@@ -43,7 +43,7 @@ class Config:
             "max_overflow": 2,
             "connect_args": {
                 "sslmode": "require",
-                "connect_timeout": 10,
+                "connect_timeout": 30,
             },
         }
     else:
