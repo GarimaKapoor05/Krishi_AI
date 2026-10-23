@@ -10,6 +10,7 @@ export function imageUrl(path) {
 export function buildListingForm({
   cropName,
   variety,
+  description,
   quantity,
   quantityUnit,
   farmerGrade,
@@ -21,6 +22,7 @@ export function buildListingForm({
   const form = new FormData();
   form.append("crop_name", cropName || "");
   form.append("variety", variety || "");
+  form.append("description", description || "");
   form.append("quantity", quantity || "");
   form.append("quantity_unit", quantityUnit || "Quintals");
   form.append("farmer_grade", farmerGrade || "");
@@ -36,6 +38,10 @@ export function buildListingForm({
 export const gradePhoto = (formData) => api.post("/api/grade", formData);
 
 export const createListing = (formData) => api.post("/api/listings", formData);
+
+export const adminListings = () => api.get("/api/admin/listings");
+
+export const createAdminListing = (formData) => api.post("/api/admin/listings", formData);
 
 export const browseListings = (params) => api.get("/api/listings", { params });
 

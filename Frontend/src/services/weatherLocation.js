@@ -8,6 +8,12 @@ const LOCATION_ALIASES = {
   allahabad: "prayagraj",
   faizabad: "ayodhya",
   newdelhi: "delhi",
+  nctofdelhi: "delhi",
+  nationalcapitalterritoryofdelhi: "delhi",
+  andamannicobarislands: "andamanandnicobarislands",
+  jammukashmir: "jammuandkashmir",
+  dadranagarhavelianddamanddiu: "dadraandnagarhavelianddamanddiu",
+  pondicherry: "puducherry",
 };
 const canonicalLocation = (value = "") => {
   const cleaned = normalize(value).replace(/(district|city)$/g, "");

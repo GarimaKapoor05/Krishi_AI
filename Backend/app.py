@@ -4,10 +4,15 @@ AgriAI — Shared Backend API with JWT Authentication + SQLAlchemy
 
 import os
 import sys
+import re
+import smtplib
+import ssl
+from email.message import EmailMessage
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, jwt_required
+from sqlalchemy import inspect
 
 from config import Config
 from models import db, User, Contact, bcrypt
@@ -63,6 +68,11 @@ ALLOWED_ORIGINS = [
     "http://127.0.0.1:5174",
     "https://krishi-ai-sepia.vercel.app"
 ]
+ALLOWED_ORIGINS.extend(
+    origin.strip().rstrip("/")
+    for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+    if origin.strip()
+)
 
 CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=True, expose_headers=["Content-Type"])
 
@@ -111,6 +121,27 @@ with app.app_context():
         except Exception:
             db.session.rollback()
         print(f"⚠️ Database migration note: {e}")
+
+    try:
+        listing_columns = {column["name"] for column in inspect(db.engine).get_columns("crop_listings")}
+        if "description" not in listing_columns:
+            db.session.execute(db.text("ALTER TABLE crop_listings ADD COLUMN description TEXT"))
+            db.session.commit()
+        admin_listing_columns = {
+            "seller_display_name": "VARCHAR(120)",
+            "seller_contact": "VARCHAR(40)",
+            "created_by_admin": "BOOLEAN NOT NULL DEFAULT FALSE",
+            "seller_consent_confirmed": "BOOLEAN NOT NULL DEFAULT FALSE",
+        }
+        for column_name, column_type in admin_listing_columns.items():
+            if column_name not in listing_columns:
+                db.session.execute(db.text(
+                    f"ALTER TABLE crop_listings ADD COLUMN {column_name} {column_type}"
+                ))
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"⚠️ Marketplace description migration note: {e}")
 
 from scheduler import calculate_schedule
 
@@ -215,30 +246,84 @@ def predict_irrigation():
 @app.route('/contact', methods=['POST'])
 def submit_contact():
     try:
-        data = request.get_json(force=True)  # force=True helps with CORS
-        
-        if not data:
-            return jsonify({"success": False, "error": "No data received"}), 400
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({"success": False, "error": "Send the contact form as JSON."}), 400
+
+        name = str(data.get("name") or "").strip()
+        email = str(data.get("email") or "").strip().lower()
+        phone = str(data.get("phone") or "").strip()
+        subject = str(data.get("subject") or "").strip()
+        message = str(data.get("message") or "").strip()
+        if not 2 <= len(name) <= 100:
+            return jsonify({"success": False, "error": "Enter your name (2 to 100 characters)."}), 400
+        if len(email) > 120 or not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
+            return jsonify({"success": False, "error": "Enter a valid email address."}), 400
+        if phone and (len(phone) > 20 or not re.fullmatch(r"[+()\-\s\d]{7,20}", phone)):
+            return jsonify({"success": False, "error": "Enter a valid phone number or leave it blank."}), 400
+        if not subject or len(subject) > 200:
+            return jsonify({"success": False, "error": "Choose a subject (up to 200 characters)."}), 400
+        if not 10 <= len(message) <= 3000:
+            return jsonify({"success": False, "error": "Your message must be 10 to 3,000 characters."}), 400
 
         contact = Contact(
-            name=data.get('name', 'Website Visitor'),
-            email=data.get('email', ''),
-            phone=data.get('phone'),
-            subject="Call Back Request from Homepage",
-            message=data.get('message', 'User requested a callback')
+            name=name,
+            email=email,
+            phone=phone or None,
+            subject=subject,
+            message=message,
         )
-        
         db.session.add(contact)
         db.session.commit()
 
+        # Keep a durable record even when outbound email has not been configured.
+        # SMTP credentials belong in the backend environment, never in the browser.
+        smtp_host = (os.getenv("SMTP_HOST") or "").strip()
+        smtp_username = (os.getenv("SMTP_USERNAME") or "").strip()
+        smtp_password = os.getenv("SMTP_PASSWORD") or ""
+        from_email = (os.getenv("CONTACT_FROM_EMAIL") or smtp_username).strip()
+        to_email = (os.getenv("CONTACT_TO_EMAIL") or "amitmehta0716@gmail.com").strip()
+        email_sent = False
+
+        if smtp_host and smtp_username and smtp_password and from_email and to_email:
+            try:
+                mail = EmailMessage()
+                mail["Subject"] = f"KrishiAI contact: {subject.replace(chr(10), ' ').replace(chr(13), ' ')}"
+                mail["From"] = from_email
+                mail["To"] = to_email
+                mail["Reply-To"] = email
+                mail.set_content(
+                    f"New KrishiAI contact form submission\n\n"
+                    f"Name: {name}\nEmail: {email}\nPhone: {phone or 'Not provided'}\n"
+                    f"Subject: {subject}\n\nMessage:\n{message}\n"
+                )
+                smtp_port = int(os.getenv("SMTP_PORT", "587"))
+                use_tls = (os.getenv("SMTP_USE_TLS", "true").strip().lower() in {"1", "true", "yes", "on"})
+                with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server:
+                    if use_tls:
+                        server.starttls(context=ssl.create_default_context())
+                    server.login(smtp_username, smtp_password)
+                    server.send_message(mail)
+                email_sent = True
+            except Exception as error:
+                app.logger.exception("Contact form saved, but email delivery failed")
+        else:
+            app.logger.warning("Contact form saved; SMTP email delivery is not configured")
+
         return jsonify({
             "success": True,
-            "message": "Thank you! Our team will call you soon."
+            "email_sent": email_sent,
+            "message": (
+                "Your message was emailed to our team. We will be in touch soon."
+                if email_sent else
+                "Your message was saved, but email delivery is not configured. Please email us directly at amitmehta0716@gmail.com."
+            ),
         }), 201
 
-    except Exception as e:
-        print("Contact Error:", str(e))   # This will show in terminal
-        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception:
+        db.session.rollback()
+        app.logger.exception("Contact form submission failed")
+        return jsonify({"success": False, "error": "We could not save your message right now. Please email or call us directly."}), 500
 
 # ====================== MARKET PRICE FORECAST ======================
 

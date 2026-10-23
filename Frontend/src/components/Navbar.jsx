@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Sprout, Menu, X, LayoutDashboard, LogOut, User, Store, Landmark, LineChart, Languages } from "lucide-react";
+import { Sprout, Menu, X, LayoutDashboard, LogOut, User, Store, Landmark, LineChart, Languages, ShieldCheck } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useTranslation } from "react-i18next";
 
@@ -33,6 +33,7 @@ export default function Navbar() {
     { to: "/features/market-intelligence", label: t("nav.market", { defaultValue: "Mandi prices" }), fullLabel: t("nav.market_full", { defaultValue: "Mandi prices" }), icon: LineChart },
     { to: "/features/schemes", label: t("nav.schemes", { defaultValue: "Schemes" }), fullLabel: t("nav.schemes_full", { defaultValue: "Government schemes" }), icon: Landmark },
     { to: "/marketplace", label: t("nav.marketplace", { defaultValue: "Marketplace" }), icon: Store },
+    ...(isLoggedIn && user?.role === "admin" ? [{ to: "/admin/listings", label: "Admin listings", icon: ShieldCheck }] : []),
   ];
 
   const languagePicker = (compact = false) => (

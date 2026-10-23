@@ -13,6 +13,7 @@ import {
 import {
   INDIAN_STATES,
   SOIL_TYPES,
+  SOIL_TEXTURES,
   IRRIGATION_SOURCES,
   WATER_AVAILABILITY,
   FARMING_SEASONS
@@ -306,6 +307,13 @@ export function Step2FarmProfile({
                 </div>
               );
             })}
+          </div>
+          <div className="mt-4 max-w-xl">
+            <label htmlFor="soil-texture" className="block text-xs font-bold text-stone-700 mb-1.5">Soil texture (optional)</label>
+            <select id="soil-texture" value={farmLocation.soilTexture || "unknown"} onChange={(e) => onChange({ soilTexture: e.target.value })} className="w-full min-h-11 rounded-xl border border-stone-300 bg-white px-3 text-sm font-medium text-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-green">
+              {SOIL_TEXTURES.map((texture) => <option key={texture.id} value={texture.id}>{texture.label} — {texture.hint}</option>)}
+            </select>
+            <p className="mt-1 text-[11px] text-stone-500">Extra field detail saved with your profile. The crop shortlist does not use soil texture yet.</p>
           </div>
         </div>
 

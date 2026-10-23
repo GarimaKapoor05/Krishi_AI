@@ -51,7 +51,7 @@ except Exception:  # pragma: no cover - dotenv is optional at runtime
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 INSTANCE_DIR = os.path.join(BASE_DIR, "instance")
-SNAPSHOT_PATH = os.path.join(INSTANCE_DIR, "market_snapshots.json")
+SNAPSHOT_PATH = os.path.abspath(os.getenv("MARKET_SNAPSHOT_PATH") or os.path.join(INSTANCE_DIR, "market_snapshots.json"))
 BUNDLED_DATASET = os.path.join(BASE_DIR, "market_price_prediction", "dataset.csv")
 
 AGMARKNET_RESOURCE = "9ef84268-d588-465a-a308-a864a43d0070"
@@ -231,7 +231,7 @@ def _agmarknet_request(params: dict) -> list[dict]:
         raise DataSourceError(
             "DATA_GOV_API_KEY is not configured; live AGMARKNET prices unavailable."
         )
-    query = {"api-key": key, "format": "json", "limit": 300}
+    query = {"api-key": key, "format": "json", "limit": 500, "offset": 0}
     query.update({k: v for k, v in params.items() if v})
     try:
         resp = requests.get(AGMARKNET_URL, params=query, timeout=HTTP_TIMEOUT)
@@ -268,7 +268,9 @@ def fetch_mandi_prices(commodity: str, state: str | None = None,
     if not commodity:
         raise DataSourceError("commodity is required")
 
-    cache_key = f"mandi|{commodity.lower()}|{(state or '').lower()}|{(market or '').lower()}"
+    all_india = (state or "").strip().lower() in {"all india", "india", "all states"}
+    state_filter = None if all_india else (state or "").strip()
+    cache_key = f"mandi|{commodity.lower()}|{(state_filter or 'all-india').lower()}|{(market or '').lower()}"
     cached = _cache.get(cache_key)
     if cached is not None:
         return cached
@@ -280,17 +282,31 @@ def fetch_mandi_prices(commodity: str, state: str | None = None,
     market_filter = (market or "").strip().lower()
     for name in names:
         # AGMARKNET market names carry suffixes (e.g. "Bhopal APMC"), so we fetch
-        # by state + commodity and filter markets client-side. This also yields
-        # every market in one call, which the comparison feature reuses.
+        # by commodity and, when requested, state. All-India requests omit the
+        # state filter and page through the national resource.
         params = {
-            "filters[state.keyword]": state,
             "filters[commodity]": name,
         }
+        if state_filter:
+            params["filters[state.keyword]"] = state_filter
         try:
-            raw = _agmarknet_request(params)
+            raw = []
+            page_size = 500
+            target_limit = min(max(int(limit or 500), 1), 5000) if all_india else page_size
+            for offset in range(0, target_limit, page_size):
+                page_params = {
+                    **params,
+                    "limit": min(page_size, target_limit - offset),
+                    "offset": offset,
+                }
+                page = _agmarknet_request(page_params)
+                raw.extend(page)
+                if len(page) < page_params["limit"]:
+                    break
         except DataSourceError as exc:
-            last_error = exc
-            continue
+            if not raw:
+                last_error = exc
+                continue
         normalized = [r for r in (_norm_record(x, name) for x in raw) if r]
         if market_filter:
             normalized = [
@@ -308,7 +324,7 @@ def fetch_mandi_prices(commodity: str, state: str | None = None,
 
     records.sort(key=lambda r: r["date"], reverse=True)
     result = {
-        "records": records[:limit],
+        "records": records[:min(max(int(limit or 500), 1), 5000)],
         "meta": {
             "source": "AGMARKNET (data.gov.in)",
             "source_id": AGMARKNET_RESOURCE,

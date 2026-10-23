@@ -23,6 +23,17 @@ import {
 } from "../../data/onboardingConstants";
 import { CropRecommendationPanel } from "./CropRecommendationPanel";
 
+const ADDITIONAL_SOIL_FIELDS = [
+  ["organicCarbon", "Organic carbon (OC)"],
+  ["electricalConductivity", "Electrical conductivity (EC)"],
+  ["sulphur", "Sulphur (S)"],
+  ["zinc", "Zinc (Zn)"],
+  ["boron", "Boron (B)"],
+  ["iron", "Iron (Fe)"],
+  ["manganese", "Manganese (Mn)"],
+  ["copper", "Copper (Cu)"],
+];
+
 export function Step3FarmingStatus({
   farmingStatus,
   activeFarming,
@@ -541,6 +552,13 @@ export function Step3FarmingStatus({
                     />
                   </div>
                   </div>
+                  <details className="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-3">
+                    <summary className="cursor-pointer text-xs font-bold text-stone-800">Add other Soil Health Card values (optional)</summary>
+                    <p className="mt-2 text-[11px] leading-relaxed text-stone-600">Add only values printed on your lab report, in the same units shown there. Leave unknown values blank. These extra values are saved with your farm profile; the current crop model does not use them yet.</p>
+                    <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      {ADDITIONAL_SOIL_FIELDS.map(([key, label]) => <label key={key} className="block text-[11px] font-bold text-stone-600">{label}<input type="number" min="0" step="any" value={planningFarming.soilNutrients?.[key] ?? ""} onChange={(e) => updateSoilNutrient(key, e.target.value)} className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2.5 py-2 text-xs font-medium outline-none focus:border-brand-green" /></label>)}
+                    </div>
+                  </details>
                 </div>
               )}
             </div>

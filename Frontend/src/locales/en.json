@@ -172,6 +172,8 @@
     "createAccount": "Create account",
     "productDescription": "A practical place to plan farm work and reach useful agricultural services.",
     "independentNote": "KrishiAI is an independent project and is not a government service.",
+    "connectTitle": "Connect",
+    "contact": "Contact us",
     "copyright": "© {{year}} KrishiAI. Made to support better farm decisions.",
     "serviceNote": "Information and availability can vary by service and location.",
     "desc": "Sustainable farming, powered by AI — from seed to harvest.",
@@ -471,5 +473,23 @@
     "holdCons": "Hold (low)",
     "holdExp": "Hold (exp.)",
     "holdOpt": "Hold (high)"
+  },
+  "contact": {
+    "eyebrow": "Partnerships and support",
+    "title": "Let’s make farm support more useful.",
+    "intro": "We welcome conversations with NGOs, farmer groups, FPOs, researchers and public-service teams working with farming communities.",
+    "emailCta": "Email our team",
+    "callCta": "Call us",
+    "contactTitle": "Contact KrishiAI",
+    "contactNote": "For partnership enquiries, field feedback, product questions or support.",
+    "emailLabel": "Email",
+    "phoneLabel": "Phone",
+    "coverage": "KrishiAI is designed for Indian farming communities. Weather uses the farm location saved in the farmer’s profile.",
+    "partnershipTitle": "NGO and FPO partnerships",
+    "partnershipText": "Discuss field pilots, farmer onboarding and practical feedback from your communities.",
+    "dataTitle": "Responsible information",
+    "dataText": "Help us make data sources, service limits and farmer-facing guidance clear.",
+    "accessTitle": "Inclusive access",
+    "accessText": "Share what farmers need for language, accessibility, connectivity and local support."
   }
 }

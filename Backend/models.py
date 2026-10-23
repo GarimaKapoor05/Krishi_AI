@@ -66,6 +66,11 @@ class CropListing(db.Model):
 
     crop_name = db.Column(db.String(120), nullable=False)
     variety = db.Column(db.String(120))
+    description = db.Column(db.Text)
+    seller_display_name = db.Column(db.String(120))
+    seller_contact = db.Column(db.String(40))
+    created_by_admin = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    seller_consent_confirmed = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     quantity = db.Column(db.Float, nullable=False)
     quantity_unit = db.Column(db.String(40), default="Quintals")
     farmer_grade = db.Column(db.String(20))
@@ -98,11 +103,12 @@ class CropListing(db.Model):
         data = {
             "id": self.id,
             "seller_id": self.seller_id,
-            "seller_name": self.seller.username if self.seller else None,
-            "seller_phone": self.seller.phone if self.seller else None,
+            "seller_name": self.seller_display_name or (self.seller.username if self.seller else None),
+            "seller_phone": self.seller_contact or (self.seller.phone if self.seller else None),
             "seller_location": self.seller.location if self.seller else None,
             "crop_name": self.crop_name,
             "variety": self.variety,
+            "description": self.description,
             "quantity": self.quantity,
             "quantity_unit": self.quantity_unit,
             "farmer_grade": self.farmer_grade,
@@ -114,6 +120,7 @@ class CropListing(db.Model):
             "confidence_band": self.confidence_band,
             "confidence_score": self.confidence_score,
             "status": self.status,
+            "created_by_admin": bool(self.created_by_admin),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "inquiry_count": self.inquiries.count() if self.inquiries else 0,
         }

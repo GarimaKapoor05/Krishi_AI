@@ -41,9 +41,12 @@ import {
 } from "recharts";
 import {
   marketIntelCatalog,
+  marketIntelHealth,
+  marketIntelMarkets,
   marketIntelAnalyze,
 } from "../services/marketIntel";
 import { apiError } from "../services/marketplace";
+import { INDIAN_STATES } from "../data/onboardingConstants";
 
 const HORIZONS = [7, 15, 30];
 
@@ -93,12 +96,21 @@ function reliabilityColor(rating) {
   return "text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/50";
 }
 
+const quoteOptionValue = (quote) => `${quote.market}::${quote.state || ""}`;
+
 export default function MarketIntelligence() {
   const { t } = useTranslation();
 
   const [catalog, setCatalog] = useState([]);
   const [commodity, setCommodity] = useState("Wheat");
-  const [market, setMarket] = useState("");
+  const profile = readFarmProfile();
+  const preferredMarket = profile?.farmLocation?.district || "";
+  const preferredState = profile?.farmLocation?.state || "";
+  const [state, setState] = useState("All India");
+  const [market, setMarket] = useState(preferredMarket || "");
+  const [markets, setMarkets] = useState([]);
+  const [marketSource, setMarketSource] = useState(null);
+  const [sourceStatus, setSourceStatus] = useState("checking");
   const [quantity, setQuantity] = useState(50);
   const [horizon, setHorizon] = useState(7);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -108,36 +120,48 @@ export default function MarketIntelligence() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
 
-  const farmProfile = readFarmProfile();
-  const preferredCrop = getFarmCrop(farmProfile);
-  const preferredMarket = farmProfile?.farmLocation?.district || "";
+  const preferredCrop = getFarmCrop(profile);
 
   useEffect(() => {
-    marketIntelCatalog("Wheat")
+    marketIntelHealth()
+      .then(({ data }) => {
+        const agmarknet = data?.sources?.agmarknet;
+        setSourceStatus(agmarknet?.configured ? "configured" : "key_missing");
+      })
+      .catch(() => setSourceStatus("unavailable"));
+    marketIntelCatalog()
       .then(({ data }) => {
         setCatalog(data.commodities || []);
         const cropMatch = data.commodities?.find((item) => item.toLowerCase() === preferredCrop.toLowerCase());
         if (cropMatch) setCommodity(cropMatch);
-        const districtMatch = data.markets?.find((item) => item.toLowerCase() === preferredMarket.toLowerCase());
-        setMarket(districtMatch || (data.markets && data.markets[0]) || "bhopal");
       })
       .catch(() => setCatalog([]));
   }, []);
 
   useEffect(() => {
-    if (!commodity) return;
-    marketIntelCatalog(commodity)
+    if (!commodity || !state) return;
+    let current = true;
+    marketIntelMarkets({ commodity, state, originMarket: preferredMarket })
       .then(({ data }) => {
-        setCatalog(data.commodities || []);
-        const markets = data.markets || [];
-        if (markets.length && !markets.some((m) => m.toLowerCase() === market.toLowerCase())) {
-          const districtMatch = markets.find((item) => item.toLowerCase() === preferredMarket.toLowerCase());
-          setMarket(districtMatch || markets[0]);
+        if (!current) return;
+        const returnedOptions = data.markets || [];
+        // The bundled fallback only contains Madhya Pradesh examples. Never
+        // show those as this farmer's local mandis in another state.
+        const options = data.data_source?.is_live || ["madhya pradesh", "all india"].includes(state.toLowerCase())
+          ? returnedOptions
+          : [];
+        setMarkets(options);
+        setMarketSource(data.data_source || null);
+        if (options.length) {
+          const sameMarket = options.find((item) => item.market?.toLowerCase() === market.toLowerCase());
+          const districtMatch = options.find((item) => item.market?.toLowerCase().includes(preferredMarket.toLowerCase())
+            && (!preferredState || item.state?.toLowerCase() === preferredState.toLowerCase()));
+          setMarket(quoteOptionValue(sameMarket || districtMatch || options[0]));
         }
       })
-      .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [commodity]);
+      .catch(() => { if (current) { setMarkets([]); setMarketSource(null); } });
+    return () => { current = false; };
+  }, [commodity, state]);
 
   const handleAnalyze = async (e) => {
     e.preventDefault();
@@ -146,7 +170,8 @@ export default function MarketIntelligence() {
     try {
       const payload = {
         commodity,
-        market: market.toLowerCase(),
+        market: (selectedMarketQuote?.market || market).toLowerCase(),
+        state: selectedMarketQuote?.state || state,
         quantity: Number(quantity) || 1,
         horizon_days: horizon,
       };
@@ -163,6 +188,8 @@ export default function MarketIntelligence() {
   };
 
   const dsource = result?.data_source;
+  const selectedMarketQuote = markets.find((item) => quoteOptionValue(item) === market)
+    || markets.find((item) => item.market?.toLowerCase() === market.toLowerCase());
   const rec = result?.recommendation;
   const decisionStyle = DECISION_STYLES[rec?.decision] || DECISION_STYLES.insufficient_data;
   const DecisionIcon = decisionStyle.icon;
@@ -235,7 +262,7 @@ export default function MarketIntelligence() {
           </div>
 
           <form onSubmit={handleAnalyze} className="space-y-6">
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-xs sm:text-sm font-bold">
                   <Leaf className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
@@ -243,7 +270,7 @@ export default function MarketIntelligence() {
                 </label>
                 <select
                   value={commodity}
-                  onChange={(e) => setCommodity(e.target.value)}
+                  onChange={(e) => { setCommodity(e.target.value); setResult(null); setMarkets([]); setMarket(""); setMarketSource(null); }}
                   className="w-full border border-stone-200 dark:border-stone-700 rounded-2xl px-4 py-3 bg-stone-50/50 dark:bg-stone-800/40 font-semibold outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                 >
                   {(catalog.length ? catalog : [commodity]).map((c) => (
@@ -255,14 +282,35 @@ export default function MarketIntelligence() {
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-xs sm:text-sm font-bold">
                   <MapPin className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
-                  {t("marketIntel.market", { defaultValue: "Market" })}
+                  State
                 </label>
-                <input
-                  value={market}
-                  onChange={(e) => setMarket(e.target.value)}
-                  placeholder="bhopal"
+                <select
+                  value={state}
+                  onChange={(e) => { setState(e.target.value); setResult(null); setMarkets([]); setMarket(""); setMarketSource(null); }}
                   className="w-full border border-stone-200 dark:border-stone-700 rounded-2xl px-4 py-3 bg-stone-50/50 dark:bg-stone-800/40 font-semibold outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                />
+                >
+                  <option value="All India">All India</option>
+                  {INDIAN_STATES.map((item) => <option key={item} value={item}>{item}</option>)}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-xs sm:text-sm font-bold">
+                  <MapPin className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
+                  {t("marketIntel.market", { defaultValue: "Mandi" })}
+                </label>
+                <select
+                  value={market}
+                  onChange={(e) => { setMarket(e.target.value); setResult(null); }}
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded-2xl px-4 py-3 bg-stone-50/50 dark:bg-stone-800/40 font-semibold outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  required
+                  disabled={!markets.length}
+                >
+                  {!markets.length && <option value="">{sourceStatus === "checking" ? "Loading mandis…" : "No mandis available"}</option>}
+                  {markets.map((item) => <option key={quoteOptionValue(item)} value={quoteOptionValue(item)}>{item.market}{item.state ? ` · ${item.state}` : ""}</option>)}
+                </select>
+                {selectedMarketQuote && <div className="text-[10px] leading-relaxed text-stone-500 dark:text-stone-400"><p>Latest {marketSource?.is_live ? "live" : "historical"} quote{selectedMarketQuote.date ? ` · ${selectedMarketQuote.date}` : ""}</p><p className="mt-0.5">Low {selectedMarketQuote.min_price == null ? "—" : inr(selectedMarketQuote.min_price)} · Modal {inr(selectedMarketQuote.price)} · High {selectedMarketQuote.max_price == null ? "—" : inr(selectedMarketQuote.max_price)} per quintal</p></div>}
+                {!markets.length && marketSource && !marketSource.is_live && <p className="text-[10px] leading-relaxed text-amber-700 dark:text-amber-300">No mandi quotes are available for {state} right now. Live market access must be configured for the selected area.</p>}
               </div>
 
               <div className="space-y-2">
@@ -272,9 +320,10 @@ export default function MarketIntelligence() {
                 </label>
                 <input
                   type="number"
-                  min="1"
+                  min="0.1"
+                  step="0.1"
                   value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
+                  onChange={(e) => { setQuantity(e.target.value); setResult(null); }}
                   className="w-full border border-stone-200 dark:border-stone-700 rounded-2xl px-4 py-3 bg-stone-50/50 dark:bg-stone-800/40 font-semibold outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                 />
               </div>
@@ -289,7 +338,7 @@ export default function MarketIntelligence() {
                     <button
                       type="button"
                       key={h}
-                      onClick={() => setHorizon(h)}
+                      onClick={() => { setHorizon(h); setResult(null); }}
                       className={`py-3 rounded-2xl text-sm font-bold border transition ${
                         horizon === h
                           ? "bg-emerald-800 text-white border-emerald-800"
@@ -347,7 +396,13 @@ export default function MarketIntelligence() {
             <div className="pt-1 flex flex-col sm:flex-row items-center justify-between gap-4">
               <span className="text-xs text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
                 <ShieldCheck size={16} className="text-emerald-600" />
-                {t("marketIntel.note", { defaultValue: "Live mandi prices require a data.gov.in key; weather is always live." })}
+                {sourceStatus === "configured"
+                  ? "AGMARKNET live access is configured. Each analysis still shows whether its quote is live or sample."
+                  : sourceStatus === "key_missing"
+                    ? "Mandi quotes are labeled with their source and date in the results."
+                    : sourceStatus === "unavailable"
+                      ? "Mandi data status could not be checked. Check that the market service is reachable; results will show their source."
+                      : "Checking the mandi data source…"}
               </span>
               <button
                 type="submit"

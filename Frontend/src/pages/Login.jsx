@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Sprout, Mail, Lock, Loader2, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { API_URL } from "../config";
@@ -11,6 +11,7 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
 
   const handleLogin = async (e) => {
@@ -34,7 +35,16 @@ function Login() {
 
       if (res.ok) {
         login(data.access_token, data.user);
-        navigate(data.user?.role === "buyer" ? "/buyer-dashboard" : "/seller-dashboard", {
+        const destination = data.user?.role === "admin"
+          ? "/admin/listings"
+          : data.user?.role === "buyer" ? "/buyer-dashboard" : "/seller-dashboard";
+        const requestedPath = location.state?.from;
+        const safeRequestedPath = typeof requestedPath === "string"
+          && requestedPath.startsWith("/")
+          && !requestedPath.startsWith("//")
+          ? requestedPath
+          : null;
+        navigate(safeRequestedPath || destination, {
           replace: true,
         });
       } else {

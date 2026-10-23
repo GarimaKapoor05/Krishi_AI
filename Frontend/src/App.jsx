@@ -18,6 +18,8 @@ import BuyerDashboard from "./pages/BuyerDashboard";
 import SellerDashboard from "./pages/SellerDashboard";
 import SmartIrrigationAdvisor from "./pages/SmartIrrigationAdvisor";
 import { DiseaseDetectionPage } from "./pages/DiseaseDetectionPage";
+import ContactPage from "./pages/ContactPage";
+import AdminListings from "./pages/AdminListings";
 
 function App() {
   const { pathname } = useLocation();
@@ -36,6 +38,7 @@ function App() {
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/contact" element={<ContactPage />} />
 
           {/* Core Farmer Dashboard */}
           <Route path="/dashboard" element={<Dashboard />} />
@@ -61,6 +64,14 @@ function App() {
 
           {/* Preserved Feature: Farmer Marketplace */}
           <Route path="/marketplace" element={<BuyerDashboard />} />
+          <Route
+            path="/admin/listings"
+            element={
+              <ProtectedRoute>
+                <AdminListings />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/buyer-dashboard"
             element={

@@ -29,7 +29,10 @@ def list_markets(commodity: str) -> list[str]:
 def _fetch_live_all(commodity: str, state: str) -> tuple[list[dict] | None, dict | None]:
     """Single live AGMARKNET call for a state (all markets). Best-effort."""
     try:
-        live = data_sources.fetch_mandi_prices(commodity, state=state)
+        national = (state or "").strip().lower() in {"all india", "india", "all states"}
+        live = data_sources.fetch_mandi_prices(
+            commodity, state=state, limit=5000 if national else 500
+        )
         records = live["records"]
         data_sources.persist_snapshots(records, commodity, market=None)
         return records, live["meta"]
@@ -73,17 +76,26 @@ def _latest_by_market(records: list[dict] | None) -> dict:
     if not records:
         return {"markets": [], "source": None, "is_live": False, "last_updated": None,
                 "latest_date": None}
-    latest_date = max(r["date"] for r in records)
-    buckets: dict[str, list[float]] = {}
+    buckets: dict[tuple[str, str], list[dict]] = {}
     for rec in records:
-        if rec["date"] != latest_date:
-            continue
-        buckets.setdefault(rec["market"], []).append(rec["modal_price"])
-    markets = [
-        {"market": m, "price": float(sum(v) / len(v)), "date": latest_date}
-        for m, v in buckets.items() if v
-    ]
-    return {"markets": markets, "latest_date": latest_date}
+        key = (rec.get("state") or "", rec["market"])
+        buckets.setdefault(key, []).append(rec)
+    markets = []
+    for (state, market), rows in buckets.items():
+        latest_date = max(item["date"] for item in rows)
+        day_rows = [item for item in rows if item["date"] == latest_date]
+        markets.append({
+            "market": market,
+            "state": state,
+            "price": float(sum(item["modal_price"] for item in day_rows) / len(day_rows)),
+            "min_price": min((item["min_price"] for item in day_rows if item.get("min_price") is not None), default=None),
+            "max_price": max((item["max_price"] for item in day_rows if item.get("max_price") is not None), default=None),
+            "date": latest_date,
+        })
+    return {
+        "markets": markets,
+        "latest_date": max((item["date"] for item in markets), default=None),
+    }
 
 
 def _market_list(commodity: str, state: str, records: list[dict] | None,
@@ -104,6 +116,12 @@ def _market_list(commodity: str, state: str, records: list[dict] | None,
         return [], {
             "is_live": False,
             "source": "No live AGMARKNET quotes available for this commodity/market yet.",
+            "last_updated": None,
+        }
+    if (state or "").strip().lower() not in {"madhya pradesh", "mp"}:
+        return [], {
+            "is_live": False,
+            "source": "No live AGMARKNET quotes are currently available for this selection.",
             "last_updated": None,
         }
     bundled = data_sources.bundled_latest_by_market(commodity)

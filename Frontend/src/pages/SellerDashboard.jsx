@@ -38,6 +38,7 @@ import {
 const EMPTY_FORM = {
   cropName: "",
   variety: "",
+  description: "",
   quantity: "",
   quantityUnit: "Quintals",
   farmerGrade: "",
@@ -163,8 +164,20 @@ export default function SellerDashboard() {
 
   const publishListing = async () => {
     setError("");
-    if (!form.cropName.trim() || !form.quantity) {
-      setError("Crop name and quantity are required to publish.");
+    if (!form.cropName.trim() || !form.quantity || Number(form.quantity) <= 0) {
+      setError("Enter a crop name and a quantity greater than zero.");
+      return;
+    }
+    if (form.description.trim().length < 20) {
+      setError("Add a short description of at least 20 characters for buyers.");
+      return;
+    }
+    if (!form.pricePerUnit || Number(form.pricePerUnit) <= 0) {
+      setError("Enter your asking price per unit. Use the price you are offering, not a market estimate.");
+      return;
+    }
+    if (!form.location.trim()) {
+      setError("Enter the district and state where buyers can collect or arrange delivery.");
       return;
     }
     if (!form.imageFile) {
@@ -339,6 +352,18 @@ export default function SellerDashboard() {
                     className="input-base"
                   />
                 </Field>
+                <div className="sm:col-span-2">
+                  <Field label="About this harvest *">
+                    <textarea
+                    value={form.description}
+                    onChange={(e) => setField("description", e.target.value)}
+                    placeholder="Describe the crop, quality, harvest timing and any details a buyer should know."
+                    rows={3}
+                    maxLength={1000}
+                      className="input-base min-h-24 resize-y"
+                    />
+                  </Field>
+                </div>
                 <Field label="Quantity *">
                   <input
                     type="number"
@@ -375,13 +400,14 @@ export default function SellerDashboard() {
                     <option value="C">Grade C</option>
                   </select>
                 </Field>
-                <Field label="Asking price per unit (₹, optional)">
+                <Field label="Your asking price per unit (₹) *">
                   <input
                     type="number"
-                    min="0"
+                    min="0.01"
+                    step="0.01"
                     value={form.pricePerUnit}
                     onChange={(e) => setField("pricePerUnit", e.target.value)}
-                    placeholder="e.g. 2400"
+                    placeholder="Enter your offer price"
                     className="input-base"
                   />
                 </Field>
@@ -393,7 +419,7 @@ export default function SellerDashboard() {
                     className="input-base"
                   />
                 </Field>
-                <Field label="Farm / Mandi location">
+                <Field label="Farm / Mandi location *">
                   <input
                     value={form.location}
                     onChange={(e) => setField("location", e.target.value)}

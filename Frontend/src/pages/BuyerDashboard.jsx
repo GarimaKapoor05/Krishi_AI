@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   AlertCircle,
@@ -64,11 +64,15 @@ function StatCard({ icon: Icon, label, value, tone }) {
 }
 
 export default function BuyerDashboard() {
-  const { user } = useAuth();
+  const { user, isLoggedIn } = useAuth();
+  const location = useLocation();
 
   const [tab, setTab] = useState("browse");
-  const [filters, setFilters] = useState({ q: "", grade: "", sort: "newest" });
+  const [filters, setFilters] = useState({ q: "", location: "", grade: "", sort: "newest" });
   const [listings, setListings] = useState([]);
+  const [listingPage, setListingPage] = useState(1);
+  const [listingPages, setListingPages] = useState(1);
+  const [listingTotal, setListingTotal] = useState(0);
   const [gradesAvailable, setGradesAvailable] = useState(null);
   const [stats, setStats] = useState(null);
   const [inquiries, setInquiries] = useState([]);
@@ -78,6 +82,7 @@ export default function BuyerDashboard() {
   const [selected, setSelected] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [inquiryError, setInquiryError] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
@@ -85,19 +90,27 @@ export default function BuyerDashboard() {
     setLoading(true);
     setError("");
     try {
-      const params = { per_page: 24 };
+      const params = { page: listingPage, per_page: 24 };
       if (filters.q) params.q = filters.q;
+      if (filters.location) params.location = filters.location;
       if (filters.grade) params.grade = filters.grade;
       if (filters.sort) params.sort = filters.sort;
       const res = await browseListings(params);
-      setListings(res.data.items || []);
+      const liveListings = res.data.items || [];
+      setListings(liveListings);
       setGradesAvailable(res.data.grades_available || null);
+      setListingTotal(res.data.total || 0);
+      setListingPages(res.data.pages || 1);
     } catch (err) {
       setError(apiError(err, "Could not load the marketplace feed."));
+      setListings([]);
+      setGradesAvailable(null);
+      setListingTotal(0);
+      setListingPages(1);
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, listingPage]);
 
   const loadMeta = useCallback(async () => {
     try {
@@ -114,6 +127,15 @@ export default function BuyerDashboard() {
 
   useEffect(() => {
     loadListings();
+    const refreshTimer = window.setInterval(() => {
+      if (document.visibilityState === "visible") loadListings();
+    }, 60_000);
+    const refreshOnFocus = () => loadListings();
+    window.addEventListener("focus", refreshOnFocus);
+    return () => {
+      window.clearInterval(refreshTimer);
+      window.removeEventListener("focus", refreshOnFocus);
+    };
   }, [loadListings]);
 
   useEffect(() => {
@@ -123,6 +145,7 @@ export default function BuyerDashboard() {
   const openListing = (listing) => {
     setSelected(listing);
     setMessage("");
+    setInquiryError("");
     setSent(false);
     setDetailLoading(true);
     listingDetail(listing.id)
@@ -133,19 +156,27 @@ export default function BuyerDashboard() {
 
   const submitInquiry = async () => {
     if (!selected) return;
+    if (!isLoggedIn) {
+      setInquiryError("Sign in as a buyer before sending an inquiry.");
+      return;
+    }
+    if (selected.seller_id === user?.id) {
+      setInquiryError("You cannot send an inquiry on your own listing.");
+      return;
+    }
     if (message.trim().length < 5) {
-      setError("Please write a short message (at least 5 characters).");
+      setInquiryError("Please write a short message (at least 5 characters).");
       return;
     }
     setSending(true);
-    setError("");
+    setInquiryError("");
     try {
       await sendInquiry(selected.id, message.trim());
       setSent(true);
       setMessage("");
       loadMeta();
     } catch (err) {
-      setError(apiError(err, "Could not send your inquiry."));
+      setInquiryError(apiError(err, "Could not send your inquiry. Please try again."));
     } finally {
       setSending(false);
     }
@@ -225,6 +256,7 @@ export default function BuyerDashboard() {
           </div>
         )}
 
+
         {/* Tabs */}
         <div className="flex gap-2 border-b border-stone-200 dark:border-stone-800">
           {[
@@ -249,12 +281,14 @@ export default function BuyerDashboard() {
         {tab === "browse" && (
           <>
             {/* Filters */}
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 flex flex-col lg:flex-row gap-3">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 flex flex-col gap-3">
+              <p className="text-xs leading-relaxed text-stone-500 dark:text-stone-400">Browse active farmer listings across India. Search by crop and filter by city, district or state. New offers refresh automatically.</p>
+              <div className="flex flex-col gap-3 lg:flex-row">
               <div className="flex-1 flex items-center gap-2 border border-stone-200 dark:border-stone-700 rounded-xl px-3.5 py-2.5 bg-stone-50/60 dark:bg-stone-800/40">
                 <Search size={16} className="text-stone-400" />
                 <input
                   value={filters.q}
-                  onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))}
+                  onChange={(e) => { setListingPage(1); setFilters((f) => ({ ...f, q: e.target.value })); }}
                   onKeyDown={(e) => e.key === "Enter" && loadListings()}
                   placeholder="Search crop, variety or location…"
                   className="w-full bg-transparent outline-none text-sm font-semibold"
@@ -264,7 +298,7 @@ export default function BuyerDashboard() {
                 <SlidersHorizontal size={16} className="text-stone-400 hidden sm:block" />
                 <select
                   value={filters.grade}
-                  onChange={(e) => setFilters((f) => ({ ...f, grade: e.target.value }))}
+                  onChange={(e) => { setListingPage(1); setFilters((f) => ({ ...f, grade: e.target.value })); }}
                   className="border border-stone-200 dark:border-stone-700 rounded-xl px-3 py-2.5 text-sm font-semibold bg-stone-50/60 dark:bg-stone-800/40"
                 >
                   {GRADE_OPTIONS.map((o) => (
@@ -275,7 +309,7 @@ export default function BuyerDashboard() {
                 </select>
                 <select
                   value={filters.sort}
-                  onChange={(e) => setFilters((f) => ({ ...f, sort: e.target.value }))}
+                  onChange={(e) => { setListingPage(1); setFilters((f) => ({ ...f, sort: e.target.value })); }}
                   className="border border-stone-200 dark:border-stone-700 rounded-xl px-3 py-2.5 text-sm font-semibold bg-stone-50/60 dark:bg-stone-800/40"
                 >
                   {SORT_OPTIONS.map((o) => (
@@ -291,6 +325,11 @@ export default function BuyerDashboard() {
                   Search
                 </button>
               </div>
+              </div>
+              <div className="flex items-center gap-2 border border-stone-200 dark:border-stone-700 rounded-xl px-3.5 py-2.5 bg-stone-50/60 dark:bg-stone-800/40 lg:w-64">
+                <MapPin size={16} className="shrink-0 text-stone-400" />
+                <input value={filters.location} onChange={(e) => { setListingPage(1); setFilters((f) => ({ ...f, location: e.target.value })); }} onKeyDown={(e) => e.key === "Enter" && loadListings()} placeholder="City, district or state" aria-label="Filter listings by city, district or state" className="w-full bg-transparent outline-none text-sm font-semibold" />
+              </div>
             </div>
 
             {/* Grade chips */}
@@ -299,7 +338,7 @@ export default function BuyerDashboard() {
                 {["A", "B", "C", "Needs review"].map((g) => (
                   <button
                     key={g}
-                    onClick={() => setFilters((f) => ({ ...f, grade: f.grade === g ? "" : g }))}
+                    onClick={() => { setListingPage(1); setFilters((f) => ({ ...f, grade: f.grade === g ? "" : g })); }}
                     className={`text-xs font-bold px-3 py-1.5 rounded-full border transition ${
                       filters.grade === g
                         ? "bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900"
@@ -322,10 +361,13 @@ export default function BuyerDashboard() {
             ) : listings.length === 0 ? (
               <div className="bg-white dark:bg-stone-900 border border-dashed border-stone-300 dark:border-stone-700 rounded-3xl p-12 text-center">
                 <Store size={28} className="mx-auto text-stone-400 mb-3" />
-                <h3 className="font-extrabold">No listings match your filters</h3>
-                <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
-                  Try a different crop, grade or search term.
+                <h3 className="font-extrabold">No live listings found</h3>
+                <p className="mx-auto mt-1 max-w-lg text-sm text-stone-500 dark:text-stone-400">
+                  Try a broader search, or invite a farmer to publish a lot with a crop photo, description, available quantity and asking price.
                 </p>
+                <Link to="/seller-dashboard" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-900">
+                  <Sprout size={15} /> Sell your harvest
+                </Link>
               </div>
             ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -359,6 +401,7 @@ export default function BuyerDashboard() {
                           <span className="font-medium text-stone-400"> · {l.variety}</span>
                         ) : null}
                       </h3>
+                      {l.description && <p className="line-clamp-2 text-xs leading-relaxed text-stone-500 dark:text-stone-400">{l.description}</p>}
                       <p className="text-xs text-stone-500 dark:text-stone-400 flex items-center gap-3 flex-wrap">
                         <span className="inline-flex items-center gap-1">
                           <Package size={12} /> {l.quantity} {l.quantity_unit}
@@ -382,6 +425,15 @@ export default function BuyerDashboard() {
                     </div>
                   </motion.button>
                 ))}
+              </div>
+            )}
+            {!loading && listingPages > 1 && (
+              <div className="flex items-center justify-between gap-4 rounded-xl border border-stone-200 bg-white px-4 py-3 dark:border-stone-800 dark:bg-stone-900">
+                <p className="text-xs text-stone-500 dark:text-stone-400">{listingTotal.toLocaleString("en-IN")} live listings · page {listingPage} of {listingPages}</p>
+                <div className="flex gap-2">
+                  <button type="button" disabled={listingPage <= 1} onClick={() => setListingPage((page) => Math.max(1, page - 1))} className="rounded-lg border border-stone-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-stone-700">Previous</button>
+                  <button type="button" disabled={listingPage >= listingPages} onClick={() => setListingPage((page) => Math.min(listingPages, page + 1))} className="rounded-lg border border-stone-300 px-3 py-2 text-xs font-semibold disabled:opacity-40 dark:border-stone-700">Next</button>
+                </div>
               </div>
             )}
           </>
@@ -483,6 +535,7 @@ export default function BuyerDashboard() {
                 </div>
               )}
 
+              {selected.description && <div className="rounded-2xl bg-stone-50 p-4 text-sm leading-relaxed text-stone-700 dark:bg-stone-800 dark:text-stone-300"><h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-stone-500 dark:text-stone-400">About this harvest</h3>{selected.description}</div>}
               {selected.harvest_date && (
                 <p className="text-xs text-stone-500 dark:text-stone-400">
                   Harvest / storage: {selected.harvest_date}
@@ -509,11 +562,18 @@ export default function BuyerDashboard() {
                     <CheckCircle2 size={16} />
                     Inquiry sent! The farmer will see your message and contact details.
                   </div>
+                ) : selected.seller_id === user?.id ? (
+                  <p className="rounded-xl bg-stone-100 px-4 py-3 text-sm text-stone-600 dark:bg-stone-800 dark:text-stone-300">This is your listing. Buyers can contact you through the marketplace.</p>
+                ) : !isLoggedIn ? (
+                  <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-900 dark:bg-sky-950/30">
+                    <p className="text-sm text-sky-950 dark:text-sky-100">Sign in to send this farmer an inquiry.</p>
+                    <Link to="/login" state={{ from: location.pathname }} className="mt-3 inline-flex min-h-10 items-center rounded-lg bg-sky-800 px-4 py-2 text-sm font-bold text-white hover:bg-sky-900">Sign in to enquire</Link>
+                  </div>
                 ) : (
                   <>
                     <textarea
                       value={message}
-                      onChange={(e) => setMessage(e.target.value)}
+                      onChange={(e) => { setMessage(e.target.value); setInquiryError(""); }}
                       rows={3}
                       placeholder="e.g. Interested in 20 quintals. Please share your best price and delivery options."
                       className="w-full border border-stone-200 dark:border-stone-700 rounded-xl p-3 text-sm font-medium bg-stone-50/60 dark:bg-stone-800/40 outline-none focus:ring-2 focus:ring-sky-500"
@@ -528,6 +588,7 @@ export default function BuyerDashboard() {
                     </button>
                   </>
                 )}
+                {inquiryError && <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200" role="alert">{inquiryError}</p>}
               </div>
             </div>
           </div>

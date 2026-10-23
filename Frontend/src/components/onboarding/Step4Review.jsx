@@ -10,7 +10,7 @@ import {
   Compass,
   AlertCircle
 } from "lucide-react";
-import { SOIL_TYPES, IRRIGATION_SOURCES, FARMING_SEASONS } from "../../data/onboardingConstants";
+import { SOIL_TYPES, SOIL_TEXTURES, IRRIGATION_SOURCES, FARMING_SEASONS } from "../../data/onboardingConstants";
 
 const formatPlannedDate = (value = "") => {
   const date = new Date(`${value}T00:00:00`);
@@ -173,6 +173,7 @@ export function Step4Review({
               <span className="text-stone-400 block font-medium">Soil Type</span>
               <span className="font-bold text-stone-800">{soilLabel}</span>
             </div>
+            {profile.farmLocation.soilTexture && profile.farmLocation.soilTexture !== "unknown" && <div><span className="text-stone-400 block font-medium">Soil Texture</span><span className="font-bold text-stone-800">{SOIL_TEXTURES.find((item) => item.id === profile.farmLocation.soilTexture)?.label || profile.farmLocation.soilTexture}</span></div>}
             <div>
               <span className="text-stone-400 block font-medium">Irrigation Source</span>
               <span className="font-bold text-stone-800">{irrigationLabel}</span>
@@ -304,6 +305,7 @@ export function Step4Review({
                     : "No Test Values"}
                 </span>
               </div>
+              {profile.planningFarming.soilNutrients && Object.entries(profile.planningFarming.soilNutrients).some(([key, value]) => !["nitrogen", "phosphorus", "potassium", "ph"].includes(key) && value !== "" && value != null) && <div className="col-span-2 sm:col-span-4"><span className="text-stone-400 block font-medium">Additional lab values recorded</span><span className="font-bold text-stone-800">{Object.entries(profile.planningFarming.soilNutrients).filter(([key, value]) => !["nitrogen", "phosphorus", "potassium", "ph"].includes(key) && value !== "" && value != null).length} additional values</span></div>}
               <div>
                 <span className="text-stone-400 block font-medium">Soil Photo</span>
                 <span className="font-bold text-stone-800">

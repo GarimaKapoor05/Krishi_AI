@@ -9,13 +9,20 @@ export const INDIAN_STATES = [
   "Assam",
   "Bihar",
   "Chhattisgarh",
+  "Andaman and Nicobar Islands",
+  "Chandigarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
   "Goa",
   "Gujarat",
   "Haryana",
   "Himachal Pradesh",
   "Jharkhand",
+  "Jammu and Kashmir",
   "Karnataka",
   "Kerala",
+  "Ladakh",
+  "Lakshadweep",
   "Madhya Pradesh",
   "Maharashtra",
   "Manipur",
@@ -24,6 +31,7 @@ export const INDIAN_STATES = [
   "Nagaland",
   "Odisha",
   "Punjab",
+  "Puducherry",
   "Rajasthan",
   "Sikkim",
   "Tamil Nadu",
@@ -77,6 +85,17 @@ export const SOIL_TYPES = [
     description: "No worries! Our advisory will help identify it based on your region and crop performance.",
     color: "#6b7280"
   }
+];
+
+// Physical soil texture is recorded separately from the broad Indian soil
+// group above so it does not silently change irrigation-model parameters.
+export const SOIL_TEXTURES = [
+  { id: "sandy", label: "Sandy", hint: "Gritty; water drains quickly" },
+  { id: "sandy_loam", label: "Sandy loam", hint: "Crumbly with a little grit" },
+  { id: "loam", label: "Loam", hint: "Soft, crumbly soil that holds some moisture" },
+  { id: "clay_loam", label: "Clay loam", hint: "Smooth and sticky when wet" },
+  { id: "clay", label: "Clay", hint: "Fine soil that holds water for longer" },
+  { id: "unknown", label: "I don't know", hint: "You can add this later" },
 ];
 
 export const IRRIGATION_SOURCES = [

@@ -18,6 +18,7 @@ GET    /uploads/<filename>           Serve stored listing photos
 """
 
 import json
+import math
 import os
 import re
 import uuid
@@ -31,7 +32,7 @@ from quality_grader import grade_photo, analyze_image
 mp_bp = Blueprint("marketplace", __name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+UPLOAD_DIR = os.path.abspath(os.getenv("UPLOAD_DIR") or os.path.join(BASE_DIR, "uploads"))
 
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 MAX_IMAGE_BYTES = 8 * 1024 * 1024  # 8 MB
@@ -48,6 +49,10 @@ VALID_GRADES = {"A", "B", "C", "Needs review"}
 def _current_user():
     uid = get_jwt_identity()
     return db.session.get(User, int(uid)) if uid else None
+
+
+def _is_marketplace_admin(user):
+    return bool(user and (user.role or "").strip().lower() == "admin")
 
 
 def _read_image(file_storage):
@@ -71,7 +76,9 @@ def _listing_context(form):
     return {
         "crop_name": (form.get("crop_name") or "").strip(),
         "crop_variety": (form.get("variety") or form.get("crop_variety") or "").strip(),
+        "description": (form.get("description") or "").strip(),
         "quantity": (form.get("quantity") or "").strip(),
+        "price_per_unit": (form.get("price_per_unit") or "").strip(),
         "quantity_unit": (form.get("quantity_unit") or "Quintals").strip(),
         "farmer_grade": (form.get("farmer_grade") or "").strip(),
         "harvest_date": (form.get("harvest_date") or "").strip(),
@@ -79,16 +86,30 @@ def _listing_context(form):
     }
 
 
-def _validate_listing_context(ctx, require_crop=True):
+def _validate_listing_context(ctx, require_crop=True, require_offer_details=False):
     errors = []
     if require_crop and not ctx["crop_name"]:
         errors.append("crop_name is required")
+    qty = None
     try:
         qty = float(ctx["quantity"]) if ctx["quantity"] else None
-        if qty is not None and qty <= 0:
+        if qty is not None and (not math.isfinite(qty) or qty <= 0):
             errors.append("quantity must be greater than zero")
     except ValueError:
         errors.append("quantity must be numeric")
+    if require_offer_details:
+        if qty is None or not math.isfinite(qty) or qty <= 0:
+            errors.append("quantity must be greater than zero")
+        if len(ctx["description"]) < 20 or len(ctx["description"]) > 1000:
+            errors.append("description must contain 20 to 1000 characters")
+        if not ctx["location"]:
+            errors.append("location is required")
+        try:
+            offer_price = float(ctx["price_per_unit"])
+            if not math.isfinite(offer_price) or offer_price <= 0:
+                errors.append("price_per_unit must be greater than zero")
+        except (TypeError, ValueError):
+            errors.append("price_per_unit is required and must be numeric")
     if ctx["farmer_grade"] and ctx["farmer_grade"].upper()[0] not in "ABC":
         errors.append("farmer_grade must be A, B or C")
     return errors
@@ -99,7 +120,7 @@ def _parse_price(value):
         return None
     try:
         price = float(value)
-        return price if price >= 0 else None
+        return price if math.isfinite(price) and price > 0 else None
     except (TypeError, ValueError):
         return None
 
@@ -148,15 +169,15 @@ def create_listing():
     if not user:
         return jsonify({"error": "Unknown user"}), 401
 
+    ctx = _listing_context(request.form)
+    errors = _validate_listing_context(ctx, require_offer_details=True)
+    if errors:
+        return jsonify({"error": "; ".join(errors)}), 400
+
     file = request.files.get("image")
     filename, data = _read_image(file)
     if not filename:
         return jsonify({"error": "A valid photo (jpg/png/webp, max 8 MB) is required"}), 400
-
-    ctx = _listing_context(request.form)
-    errors = _validate_listing_context(ctx)
-    if errors:
-        return jsonify({"error": "; ".join(errors)}), 400
 
     report = grade_photo(image_bytes=data, context=ctx)
 
@@ -164,6 +185,7 @@ def create_listing():
         seller_id=user.id,
         crop_name=ctx["crop_name"],
         variety=ctx["crop_variety"] or None,
+        description=ctx["description"],
         quantity=float(ctx["quantity"]) if ctx["quantity"] else 0.0,
         quantity_unit=ctx["quantity_unit"] or "Quintals",
         farmer_grade=ctx["farmer_grade"].upper()[:1] if ctx["farmer_grade"] else None,
@@ -186,6 +208,67 @@ def create_listing():
     }), 201
 
 
+@mp_bp.route("/api/admin/listings", methods=["GET", "POST"])
+@jwt_required()
+def admin_listings():
+    """Create or view real farmer offers entered by a provisioned admin."""
+    admin = _current_user()
+    if not _is_marketplace_admin(admin):
+        return jsonify({"error": "Marketplace administrator access is required."}), 403
+
+    if request.method == "GET":
+        rows = (CropListing.query
+                .filter(CropListing.seller_id == admin.id, CropListing.created_by_admin.is_(True))
+                .order_by(CropListing.created_at.desc())
+                .all())
+        return jsonify({"items": [row.to_dict(full_report=True) for row in rows]}), 200
+
+    ctx = _listing_context(request.form)
+    errors = _validate_listing_context(ctx, require_offer_details=True)
+    seller_name = (request.form.get("seller_name") or "").strip()
+    seller_phone = (request.form.get("seller_phone") or "").strip()
+    seller_consent = (request.form.get("seller_consent") or "").strip().lower() == "true"
+    if not seller_name:
+        errors.append("seller_name is required")
+    if not seller_phone or not re.fullmatch(r"[+()\-\s\d]{7,20}", seller_phone):
+        errors.append("a valid seller_phone is required")
+    if not seller_consent:
+        errors.append("seller consent to publish the offer and contact details is required")
+    if errors:
+        return jsonify({"error": "; ".join(errors)}), 400
+
+    filename, data = _read_image(request.files.get("image"))
+    if not filename:
+        return jsonify({"error": "A real harvest photo (jpg/png/webp, max 8 MB) is required."}), 400
+
+    report = grade_photo(image_bytes=data, context=ctx)
+    listing = CropListing(
+        seller_id=admin.id,
+        crop_name=ctx["crop_name"],
+        variety=ctx["crop_variety"] or None,
+        description=ctx["description"],
+        seller_display_name=seller_name,
+        seller_contact=seller_phone,
+        created_by_admin=True,
+        seller_consent_confirmed=True,
+        quantity=float(ctx["quantity"]),
+        quantity_unit=ctx["quantity_unit"] or "Quintals",
+        farmer_grade=ctx["farmer_grade"].upper()[:1] if ctx["farmer_grade"] else None,
+        harvest_date=ctx["harvest_date"] or None,
+        location=ctx["location"],
+        price_per_unit=_parse_price(request.form.get("price_per_unit")),
+        image_filename=filename,
+        grade=report["suggested_grade"],
+        confidence_band=report["confidence_band"],
+        confidence_score=report["confidence_score"],
+        report_json=json.dumps(report, ensure_ascii=False),
+        status="active",
+    )
+    db.session.add(listing)
+    db.session.commit()
+    return jsonify({"listing": listing.to_dict(full_report=True), "grade_report": report}), 201
+
+
 @mp_bp.route("/api/listings", methods=["GET"])
 def browse_listings():
     """Buyer marketplace feed with search + filters."""
@@ -200,6 +283,7 @@ def browse_listings():
         query = query.filter(db.or_(
             CropListing.crop_name.ilike(like),
             CropListing.variety.ilike(like),
+            CropListing.description.ilike(like),
             CropListing.location.ilike(like),
         ))
 
@@ -285,12 +369,21 @@ def update_listing(listing_id):
         listing.status = status
 
     if "price_per_unit" in data:
-        listing.price_per_unit = _parse_price(data["price_per_unit"])
+        price = _parse_price(data["price_per_unit"])
+        if price is None or price <= 0:
+            return jsonify({"error": "price_per_unit must be greater than zero"}), 400
+        listing.price_per_unit = price
+
+    if "description" in data:
+        description = str(data["description"] or "").strip()
+        if len(description) < 20 or len(description) > 1000:
+            return jsonify({"error": "description must contain 20 to 1000 characters"}), 400
+        listing.description = description
 
     if "quantity" in data:
         try:
             qty = float(data["quantity"])
-            if qty < 0:
+            if qty <= 0 or not math.isfinite(qty):
                 raise ValueError
             listing.quantity = qty
         except (TypeError, ValueError):

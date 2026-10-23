@@ -1,4 +1,4 @@
-import { ArrowUpRight, Sprout } from "lucide-react";
+import { ArrowUpRight, Mail, Sprout } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -29,7 +29,7 @@ export default function Footer() {
     <footer className="border-t border-stone-200 bg-[#f2f3ec] px-4 py-10 transition-colors dark:border-stone-800 dark:bg-[#0e1913] sm:px-6 sm:py-12">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-9 md:grid-cols-12 md:gap-12">
         {/* Brand Column */}
-        <div className="space-y-4 md:col-span-6">
+        <div className="space-y-4 md:col-span-5">
           <Link to="/" className="inline-flex items-center gap-2.5 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-700">
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-800 text-white">
               <Sprout size={20} className="text-emerald-200" aria-hidden="true" />
@@ -46,10 +46,19 @@ export default function Footer() {
           <p className="max-w-md text-xs leading-5 text-stone-500 dark:text-stone-500">
             {t("footer.independentNote")}
           </p>
+
+          <Link
+            to="/contact"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600"
+          >
+            <Mail size={16} aria-hidden="true" />
+            {t("footer.contact", { defaultValue: "Contact us" })}
+            <ArrowUpRight size={14} aria-hidden="true" />
+          </Link>
         </div>
 
         {/* Navigation Columns */}
-        <div className="grid grid-cols-2 gap-6 md:col-span-6 md:gap-10">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:col-span-7 md:grid-cols-2 md:gap-6">
           {sections.map((section) => (
             <div key={section.title} className="space-y-3">
               <h2 className="text-xs font-bold uppercase tracking-[0.13em] text-stone-900 dark:text-white">
