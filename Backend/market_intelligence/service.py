@@ -36,8 +36,7 @@ def _fetch_live_all(commodity: str, state: str) -> tuple[list[dict] | None, dict
         records = live["records"]
         data_sources.persist_snapshots(records, commodity, market=None)
         return records, live["meta"]
-    except data_sources.DataSourceError as exc:
-        print(f"[Market Intel] AGMARKNET fetch failed: {exc}", flush=True)
+    except data_sources.DataSourceError:
         return None, None
 
 

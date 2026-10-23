@@ -1,21 +1,3 @@
-"""
-Plant disease inference for Krishi AI (MobileNetV2 image classifier).
-
-Design notes
-------------
-* The model is loaded lazily, on the first prediction, so the web server boots
-  quickly and TensorFlow's memory is only used when someone scans a leaf.
-* Everything that depends on how the model was trained (input size, pixel
-  scaling, confidence threshold) lives in model/model_config.json, so nothing
-  here needs editing when the training setup is confirmed.
-* The list of class names (class_names.json) MUST be in the same order the
-  model was trained with. See README_DISEASE.md.
-
-Command line check (run from the Backend folder):
-    python -m disease_detection.predict_disease --info
-    python -m disease_detection.predict_disease path/to/leaf.jpg
-"""
-
 import importlib
 import io
 import json
