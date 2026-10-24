@@ -58,7 +58,27 @@ AGMARKNET_RESOURCE = "9ef84268-d588-465a-a308-a864a43d0070"
 AGMARKNET_URL = f"https://api.data.gov.in/resource/{AGMARKNET_RESOURCE}"
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 
-HTTP_TIMEOUT = 30  # seconds (data.gov.in can be slow)
+
+
+def _env_float(name: str, default: float) -> float:
+    try:
+        value = float(os.getenv(name, "") or default)
+    except ValueError:
+        return default
+    return value if value > 0 else default
+
+
+HTTP_TIMEOUT = 30  # seconds, used for Open-Meteo
+# AGMARKNET (data.gov.in) is the slow, unreliable dependency, so it gets its own
+# (connect, read) timeouts. Override the read timeout with AGMARKNET_READ_TIMEOUT.
+AGMARKNET_TIMEOUT = (5, _env_float("AGMARKNET_READ_TIMEOUT", 20.0))
+# data.gov.in stalls requests that identify as "python-requests" (they hang until
+# the read timeout), but answers browser-style requests in under a second.
+# Override with AGMARKNET_USER_AGENT if this value is ever rejected.
+AGMARKNET_HEADERS = {"User-Agent": (os.getenv("AGMARKNET_USER_AGENT") or "").strip() or "Mozilla/5.0"}
+# After a timeout or connection failure, skip live AGMARKNET calls for this many
+# seconds so every request does not wait out its own timeout again.
+AGMARKNET_COOLDOWN = _env_float("AGMARKNET_COOLDOWN", 120.0)
 CACHE_TTL = 15 * 60  # 15 minutes for live calls
 
 # Coordinates for the mandis present in the bundled dataset. Used for weather.
@@ -87,6 +107,13 @@ COMMODITY_ALIASES = {
 
 class DataSourceError(Exception):
     """Raised when a live data source cannot be reached or returns no usable data."""
+
+
+class SourceUnavailableError(DataSourceError):
+    """The source did not answer (timeout / network). Retrying immediately is pointless."""
+
+
+_agmarknet_down_until = 0.0  # epoch seconds; live calls are skipped until then
 
 
 class _TTLCache:
@@ -226,17 +253,25 @@ def _to_float(value):
 
 
 def _agmarknet_request(params: dict) -> list[dict]:
+    global _agmarknet_down_until
     key = get_api_key()
     if not key:
         raise DataSourceError(
             "DATA_GOV_API_KEY is not configured; live AGMARKNET prices unavailable."
         )
+    remaining = _agmarknet_down_until - time.time()
+    if remaining > 0:
+        raise SourceUnavailableError(
+            f"AGMARKNET is not responding; skipping live calls for another {int(remaining) + 1}s."
+        )
     query = {"api-key": key, "format": "json", "limit": 500, "offset": 0}
     query.update({k: v for k, v in params.items() if v})
     try:
-        resp = requests.get(AGMARKNET_URL, params=query, timeout=HTTP_TIMEOUT)
+        resp = requests.get(AGMARKNET_URL, params=query, headers=AGMARKNET_HEADERS, timeout=AGMARKNET_TIMEOUT)
     except requests.RequestException as exc:
-        raise DataSourceError(f"AGMARKNET request failed: {exc}") from exc
+        _agmarknet_down_until = time.time() + AGMARKNET_COOLDOWN
+        raise SourceUnavailableError(f"AGMARKNET request failed: {exc}") from exc
+    _agmarknet_down_until = 0.0  # it answered, so live calls are healthy again
     if resp.status_code == 429:
         raise DataSourceError(
             "AGMARKNET rate limit reached (HTTP 429). The data.gov.in sample/API key "
@@ -257,8 +292,39 @@ def _agmarknet_request(params: dict) -> list[dict]:
     return records
 
 
+# The state names in our dropdown versus the spelling AGMARKNET actually uses
+# (checked against the live API on 2026-10-24). The API's spelling is tried first.
+STATE_ALIASES = {
+    "chhattisgarh": ["Chattisgarh"],
+    "andaman and nicobar islands": ["Andaman and Nicobar"],
+    "kerala": ["Keralam"],
+}
+
+
+def _state_candidates(state: str | None) -> list[str]:
+    name = (state or "").strip()
+    return STATE_ALIASES.get(name.lower(), []) + [name]
+
+
 def fetch_mandi_prices(commodity: str, state: str | None = None,
                        market: str | None = None, limit: int = 500) -> dict:
+    """Fetch today's mandi quotes, trying the API's own spelling of the state first."""
+    name = (state or "").strip()
+    if not name or name.lower() in {"all india", "india", "all states"}:
+        return _fetch_mandi_prices_once(commodity, state, market, limit)
+    last_error: DataSourceError | None = None
+    for candidate in _state_candidates(name):
+        try:
+            return _fetch_mandi_prices_once(commodity, candidate, market, limit)
+        except SourceUnavailableError:
+            raise  # the API is not answering; trying other spellings is pointless
+        except DataSourceError as exc:
+            last_error = exc
+    raise last_error  # type: ignore[misc]
+
+
+def _fetch_mandi_prices_once(commodity: str, state: str | None = None,
+                             market: str | None = None, limit: int = 500) -> dict:
     """Fetch today's mandi quotes for a commodity from AGMARKNET.
 
     Returns a dict with ``records`` and metadata. Raises ``DataSourceError`` if
@@ -364,7 +430,7 @@ def fetch_records_for_date(commodity: str, state: str, arrival_date: str,
     last_error: DataSourceError | None = None
     for name in names:
         params = {
-            "filters[state.keyword]": state,
+            "filters[state.keyword]": _state_candidates(state)[0],
             "filters[commodity]": name,
             "filters[arrival_date]": _ddmmyyyy(arrival_date),
         }
@@ -429,12 +495,12 @@ def backfill_live_history(commodity: str, state: str, market: str | None = None,
     budget = min(max_requests, target_points * 2)
 
     new_dates = 0
-    requests = 0
+    request_count = 0
     consecutive_errors = 0
     outcome = "exhausted"
 
     for offset in range(1, window + 1):
-        if len(have) >= target_points or requests >= budget:
+        if len(have) >= target_points or request_count >= budget:
             break
         if consecutive_errors >= 3:
             outcome = "throttled"
@@ -443,9 +509,12 @@ def backfill_live_history(commodity: str, state: str, market: str | None = None,
         if day in have:
             continue
 
-        requests += 1
+        request_count += 1
         try:
             records = fetch_records_for_date(commodity, state, day, market)
+        except SourceUnavailableError:
+            outcome = "unreachable"
+            break
         except DataSourceError as exc:
             consecutive_errors += 1
             outcome = "throttled" if "429" in str(exc) else "error"

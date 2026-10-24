@@ -1,15 +1,8 @@
-"""
-Orchestration layer: ties data sources, analytics, forecasting and the decision
-engine into the payloads the Flask blueprint returns.
-
-The module degrades gracefully: if the live AGMARKNET key is missing or the API
-is unreachable, it still returns a complete analysis built from the bundled
-historical dataset, with the provenance clearly marked as *not live*.
-"""
-
 from __future__ import annotations
 
 from datetime import datetime, timezone
+
+from flask import current_app
 
 from . import analytics as analytics_mod
 from . import data_sources, forecasting, recommendation
@@ -37,7 +30,7 @@ def _fetch_live_all(commodity: str, state: str) -> tuple[list[dict] | None, dict
         data_sources.persist_snapshots(records, commodity, market=None)
         return records, live["meta"]
     except data_sources.DataSourceError as exc:
-        app.logger.warning("Live market fetch failed: %s", exc)
+        current_app.logger.warning("Live market fetch failed: %s", exc)
         return None, None
 
 

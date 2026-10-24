@@ -102,46 +102,33 @@ app.register_blueprint(mi_bp)
 
 app.register_blueprint(disease_bp)
 
+
 with app.app_context():
     try:
         db.create_all()
-        _mg = db.session.execute(db.text("PRAGMA table_info(user)"))
-        _cols = {row[1] for row in _mg.fetchall()}
-        if "role" not in _cols:
-            db.session.execute(db.text(
-                "ALTER TABLE user ADD COLUMN role VARCHAR(20) DEFAULT 'seller'"))
-            db.session.commit()
+        user_columns = {
+            column["name"]
+            for column in inspect(db.engine).get_columns("user")
+        }
+
+        if "role" not in user_columns:
+            with db.engine.begin() as conn:
+                if db.engine.dialect.name == "postgresql":
+                    conn.execute(db.text(
+                        'ALTER TABLE "user" ADD COLUMN role '
+                        "VARCHAR(20) DEFAULT 'seller'"
+                    ))
+                else:
+                    conn.execute(db.text(
+                        "ALTER TABLE user ADD COLUMN role "
+                        "VARCHAR(20) DEFAULT 'seller'"
+                    ))
+
         print("✅ Database tables created/verified")
     except Exception as e:
         db.session.rollback()
-        try:
-            db.session.execute(db.text(
-                "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'seller'"))
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
         print(f"⚠️ Database migration note: {e}")
 
-    try:
-        listing_columns = {column["name"] for column in inspect(db.engine).get_columns("crop_listings")}
-        if "description" not in listing_columns:
-            db.session.execute(db.text("ALTER TABLE crop_listings ADD COLUMN description TEXT"))
-            db.session.commit()
-        admin_listing_columns = {
-            "seller_display_name": "VARCHAR(120)",
-            "seller_contact": "VARCHAR(40)",
-            "created_by_admin": "BOOLEAN NOT NULL DEFAULT FALSE",
-            "seller_consent_confirmed": "BOOLEAN NOT NULL DEFAULT FALSE",
-        }
-        for column_name, column_type in admin_listing_columns.items():
-            if column_name not in listing_columns:
-                db.session.execute(db.text(
-                    f"ALTER TABLE crop_listings ADD COLUMN {column_name} {column_type}"
-                ))
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        print(f"⚠️ Marketplace description migration note: {e}")
 
 from scheduler import calculate_schedule
 
