@@ -106,6 +106,7 @@ app.register_blueprint(disease_bp)
 with app.app_context():
     try:
         db.create_all()
+
         user_columns = {
             column["name"]
             for column in inspect(db.engine).get_columns("user")
